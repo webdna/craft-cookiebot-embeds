@@ -2,7 +2,7 @@
 spec: Cookiebot embeds
 slug: cookiebot-embeds
 status: draft
-version: 0.1
+version: 0.2
 date: 2026-11-20
 author: Claude (for Sam Birch)
 client: webdna (internal, used across client sites)
@@ -13,7 +13,7 @@ related: []
 
 # Cookiebot embeds
 
-> **Status:** draft - **Version:** 0.1 - **Profile:** `_PROFILE.craft-cookiebot-embeds.md`
+> **Status:** draft - **Version:** 0.2 - **Profile:** `_PROFILE.craft-cookiebot-embeds.md`
 > Third-party videos, maps, widgets and tracking scripts on a Craft site wait for the visitor's
 > Cookiebot consent automatically, without an editor or developer marking each one up by hand.
 
@@ -100,7 +100,8 @@ blocking mode, which conflicts with loading Cookiebot through Tag Manager and is
 
 - A Craft Plugin Store listing (store copy, screenshots, Craft Console)
 - Gating third-party images behind an opt-in setting
-- Gating `type="module"` scripts, once it is confirmed how Cookiebot reactivates them
+- Gating `type="module"` scripts through the plugin's own activator (Cookiebot re-runs every
+  released script as a classic script, so it cannot release a module; spike 0.1)
 - The cookiebot-check skill reading the plugin's provider list instead of its own copy
 
 ---
@@ -201,14 +202,14 @@ garbage collection. The report's clear button deletes all rows. Uninstall drops 
 | BR-10 | **External script** classified as preferences, statistics or marketing: set `type="text/plain"` (replacing any existing `type`) and add `data-cookieconsent="<category>"`. All other attributes are kept in their original order and quoting. |
 | BR-11 | **Inline script** (no `src`): if its body contains a URL that classifies as gated under BR-6, or matches a fingerprint, gate it as in BR-10 with the strictest category found (marketing over statistics over preferences). An inline script naming only first-party, allowed, necessary or infra URLs is left. |
 | BR-12 | Scripts whose `type` is anything other than empty, `text/javascript`, `application/javascript` or `module` are never touched: `application/ld+json`, `application/json`, `importmap`, `text/x-template`, `text/template` and the like. |
-| BR-13 | Scripts with `type="module"` are left and recorded as `skipped`, because how Cookiebot reactivates a module is unconfirmed. |
+| BR-13 | Scripts with `type="module"` are left and recorded as `skipped`. Cookiebot (uc.js 2.146.0) releases a gated script by cloning it and forcing `type="text/javascript"`, so a gated module would run as a classic script and fail with a `SyntaxError` on its first `import` (spike 0.1). |
 | BR-14 | **Fingerprints** are regular expressions matched against inline script bodies, each with a vendor and category; shipped ones live in the provider list, sites can add their own under `fingerprints`. A fingerprint that fails to compile is logged once and ignored, never thrown. |
 | BR-15 | **iframe** with a `src` that classifies as gated: rename `src` to `data-cookieblock-src`, add `data-cookieconsent="<category>"`, and insert the placeholder immediately after the iframe. An iframe with no `src`, an empty `src`, `about:blank`, or `srcdoc` is left. |
 | BR-16 | **Widget script in the body**: a gated external or inline script that appears after `<body` gets the placeholder inserted immediately before it. Scripts in `<head>` get no placeholder. |
 | BR-17 | The **placeholder** is rendered from the plugin's template, or from the site template named in `placeholderTemplate`, with variables `category`, `vendor` (may be null), `kind`, `width` and `height` (copied from the iframe's attributes when present). It carries the class `cookieconsent-optout-<category>` so Cookiebot hides it once that category is accepted. The default message is translatable in the `cookiebot-embeds` category and links to `javascript:Cookiebot.renew()`. |
 | BR-18 | The default placeholder has no inline `style` attribute (strict CSP sites) and no dependency on the site's CSS framework; it uses `cbe-placeholder` classes that a site may style. |
-| BR-19 | **Vue mode** (`mode` = `vue`): instead of Cookiebot's attributes, gated elements get the plugin's own (`data-cbe-consent`, `data-cbe-src`, with `type="text/plain"` on scripts) so Cookiebot does not activate them before Vue has rebuilt the page. The plugin registers its activator script in the page head. The activator releases elements whose category is consented once both (a) the site has called `window.CookiebotEmbeds.ready()` and (b) Cookiebot has reported consent, and again on every later Cookiebot consent event; it shows and hides placeholders itself. Released scripts are replaced by live copies with all attributes and inline body kept. |
-| BR-20 | The final shape of BR-19 is fixed by the phase 0 spike (section 8). If the spike shows Cookiebot's own attributes survive Vue's rebuild, Vue mode reduces to registering the activator for scripts only and BR-19 is superseded. |
+| BR-19 | **Vue mode** (`mode` = `vue`): instead of Cookiebot's attributes, gated elements get the plugin's own (`data-cbe-consent`, `data-cbe-src`, with `type="text/plain"` on scripts) so Cookiebot does not activate them before Vue has rebuilt the page. The plugin registers its activator script in the page head. The activator releases elements whose category is consented once both (a) the site has called `window.CookiebotEmbeds.ready()` and (b) Cookiebot has reported consent, and again on every later Cookiebot consent event; it shows and hides placeholders itself. Released scripts are replaced by live copies with all attributes and inline body kept. Confirmed by spike 0.1: for a returning visitor Cookiebot releases scripts as soon as it loads, which can be before Vue mounts, and Vue's rebuild then removes the listeners the script attached. An element Vue creates again later (for example under a `v-if`) comes back gated and is released on the next `ready()` call or consent event, not at once. |
+| BR-20 | *Superseded by spike 0.1 (2026-11-22); BR-19 stands.* Cookiebot's own attributes survive Vue's rebuild for iframes but not for scripts, because Cookiebot's release timing races Vue's mount (section 8, spike notes). |
 | BR-21 | **Banner option**, a switch in the plugin config (`injectCookiebot`, default `false`, for sites that do not load Cookiebot through Tag Manager): when true and `cbid` is set, a Cookiebot `uc.js` script with `data-cbid` and no `async`, `defer` or `data-blockingmode` is inserted as the first child of `<head>`. It is not inserted when the page already contains a `consent.cookiebot` `uc.js` script. `cookiebotDomain` chooses `consent.cookiebot.com` (default) or `consent.cookiebot.eu`. With `injectCookiebot` true and no `cbid`, nothing is inserted and a warning is logged once per hour. |
 | BR-22 | The Twig function `cookiebotSettingsLink(text = null, attrs = {})` returns an `<a href="javascript:Cookiebot.renew()">` with translatable default text "Cookie settings". The plugin never inserts it into the page by itself. |
 | BR-23 | **Report**: when `report` is true (default), each rewritten page records its sightings (BR-8, BR-10 to BR-16 outcomes, plus left first-party/allowed/necessary third parties as `allowed`/`left`) in one batched upsert. A given site/host/action/kind row is written at most once per hour per PHP process cache window (throttled through Craft's cache), so busy uncached pages do not write on every request. |
@@ -469,11 +470,49 @@ report's labels and its empty state, all translatable. No client copy is owed.
 Phase 0 runs first although it ships nothing, because it decides BR-19/BR-20 and BR-13; building
 Vue mode on a guess is the most expensive way to be wrong.
 
+### Spike 0.1 notes (2026-11-22)
+
+**Method.** Read Cookiebot's live `uc.js` (2.146.0, built 2026-11-19), then ran a throwaway local
+page under headless Chrome: Vue 2.7.16 mounted over a root holding a gated inline widget script, a
+plain script, a gated iframe and a gated iframe under a `v-if`, plus a stub that copies `uc.js`'s
+release logic exactly. Two timings: consent given after Vue mounts, and a returning visitor whose
+consent is released before Vue mounts.
+
+**What `uc.js` does.** `Cookiebot.runScripts()` takes every
+`script[type=text/plain][data-cookieconsent]` not already processed (the flag is a property on the
+DOM node), replaces each with a clone that copies all attributes and the inline body and then
+forces `type="text/javascript"`, and then calls `RunSrcTags` for `iframe`, `img`, `embed`, `video`,
+`audio`, `picture` and `source`. That moves `data-cookieblock-src` to `src` when the category is
+consented and hides the element otherwise. It rescans the live DOM on every call, and Cookiebot
+calls it on every accept. An original `type` is restored only for scripts Cookiebot blocked itself
+in automatic mode (`origScriptType`), never for a server-rendered `text/plain` script.
+
+**Results.**
+
+| Case | Consent after mount | Consent before mount (returning visitor) |
+|---|---|---|
+| Plain `<script>` inside the Vue root | Dropped by Vue | Dropped by Vue |
+| Gated `text/plain` script inside the root | Kept by Vue; runs once; its DOM output and listeners work | Runs once, but Vue's rebuild then **kills its listeners** |
+| Gated iframe | `src` set; survives a reactive re-render | Released before compile, so Vue builds it with `src`; works |
+| Gated iframe under a `v-if` that remounts | Comes back gated (`data-cookieblock-src`, no `src`) until the next `runScripts()` | Comes back with `src` |
+| `text/plain` script with module syntax, released | `SyntaxError: Cannot use import statement outside a module` | Same |
+
+**Decisions.** BR-19 stands and BR-20 is superseded: Cookiebot's own attributes are safe for
+iframes but not for scripts inside a Vue root, because Cookiebot can release scripts before Vue
+mounts. BR-13 is kept; gating modules moves to Later through the plugin's own activator.
+
+**Not yet seen on staging site B.** The real banner, real consent events and real `uc.js` timing
+against a registered domain were not exercised, because no staging URL was available. TS-6
+steps 2-5 exercise exactly that during phase 6. Task 5.1 must still check them on site B before
+it is ticked.
+
 ### Tasks
 
-- [ ] **0.1 Vue and module spike** - throwaway page on staging site B and a local HTML file; result
+- [x] **0.1 Vue and module spike** - throwaway page on staging site B and a local HTML file; result
       written into this spec (BR-19 or BR-20 superseded, BR-13 kept or moved to Later)
       Rules: BR-13, BR-19, BR-20 - Verify: spike notes in the change log
+      *Done 2026-11-22 with the local page and a read of `uc.js`; site B confirmation carried by
+      TS-6 (see spike notes).*
 - [ ] **1.1 Package scaffold** - `composer.json`, `src/CookiebotEmbeds.php`, `src/icon.svg`,
       `src/icon-mask.svg`, `README.md`, `LICENSE.md`, `CHANGELOG.md`, `ecs.php`, `phpstan.neon`,
       `phpunit.xml.dist`, `tests/bootstrap.php`, `.gitattributes`
@@ -529,7 +568,7 @@ Vue mode on a guess is the most expensive way to be wrong.
 | # | Question | Owner | State |
 |---|---|---|---|
 | 1 | Is the handle `cookiebot-embeds` unused on the Plugin Store? Craft's update check matches by handle even for plugins not listed there | Developer | **Open - blocking release** |
-| 2 | Vue mode's final design (BR-19 vs BR-20) and module-script handling (BR-13) | Developer, via task 0.1 | **Open - blocking build of phase 5** |
+| 2 | Vue mode's final design (BR-19 vs BR-20) and module-script handling (BR-13) | Developer, via task 0.1 | Resolved 2026-11-22: BR-19 stands, BR-20 superseded, BR-13 kept (section 8, spike notes) |
 | 3 | Staging site C with no Cookiebot in Tag Manager, and a test Cookiebot domain group ID for it | Sam | **Open - blocking release** (TS-10 manual steps) |
 
 **Assumptions**
@@ -665,3 +704,4 @@ AC-4 is fully proved by B5 #4.
 | Date | Version | Change | By |
 |---|---|---|---|
 | 2026-11-20 | 0.1 | First draft from the interview | Claude for Sam Birch |
+| 2026-11-22 | 0.2 | Spike 0.1: read `uc.js` 2.146.0 and ran a local Vue 2.7 page. Cookiebot releases scripts by cloning them as `text/javascript` and can do so before Vue mounts, which kills a widget's listeners; iframes survive. BR-19 stands, BR-20 superseded, BR-13 kept with its reason, module gating in Later, Appendix A #2 resolved. Site B browser check carried by TS-6. Notes in section 8 | Claude for Sam Birch |
