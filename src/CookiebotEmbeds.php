@@ -7,15 +7,18 @@ use craft\base\FsInterface;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\events\TemplateEvent;
+use craft\log\MonologTarget;
 use craft\models\Site;
 use craft\web\Request as WebRequest;
 use craft\web\Response as WebResponse;
 use craft\web\View;
+use Psr\Log\LogLevel;
 use Throwable;
 use webdna\cookiebotembeds\models\Settings;
 use webdna\cookiebotembeds\models\SiteConfig;
 use webdna\cookiebotembeds\services\Classifier;
 use webdna\cookiebotembeds\services\Config;
+use webdna\cookiebotembeds\services\Log;
 use webdna\cookiebotembeds\services\PageFilter;
 use webdna\cookiebotembeds\services\Placeholder;
 use webdna\cookiebotembeds\services\Rewriter;
@@ -56,9 +59,21 @@ class CookiebotEmbeds extends Plugin
     /** @var list<string>|null Every filesystem's public URL host, gathered once per request */
     private ?array $filesystemHosts = null;
 
+    private ?Log $log = null;
+
     public function init(): void
     {
         parent::init();
+
+        // BR-29: the plugin's own log file, at info, so unknown hosts are recorded even where
+        // Craft's default target only keeps warnings (production).
+        Craft::getLogger()->dispatcher->targets[self::LOG_CATEGORY] = new MonologTarget([
+            'name' => self::LOG_CATEGORY,
+            'categories' => [self::LOG_CATEGORY],
+            'level' => LogLevel::INFO,
+            'logContext' => false,
+            'allowLineBreaks' => false,
+        ]);
 
         // BR-1: console requests render no pages for visitors.
         if (Craft::$app->getRequest()->getIsConsoleRequest()) {
@@ -111,12 +126,52 @@ class CookiebotEmbeds extends Plugin
                 $output,
                 $config,
                 fn(): Rewriter => $this->createRewriter($config),
-                fn(string $message) => Craft::error($message, self::LOG_CATEGORY),
+                fn(string $message) => $this->logError($message),
             );
-            return $result === null ? $output : $result->html;
         } catch (Throwable $e) {
-            Craft::error('The page was served unchanged: ' . $e->getMessage(), self::LOG_CATEGORY);
+            $this->logError('The page was served unchanged: ' . $e->getMessage());
             return $output;
+        }
+        if ($result === null) {
+            return $output;
+        }
+
+        // A logging failure must not cost the page its rewrite.
+        try {
+            $this->getLog()->unknownHosts($result, $site->handle);
+        } catch (Throwable $e) {
+            $this->logError('Unknown hosts could not be logged: ' . $e->getMessage());
+        }
+        return $result->html;
+    }
+
+    /**
+     * The plugin's throttled log (BR-29): each distinct line at most once per hour, claimed
+     * through Craft's cache. Writes in the `cookiebot-embeds` category.
+     */
+    public function getLog(): Log
+    {
+        return $this->log ??= new Log(
+            claim: fn(string $key, int $ttl): bool => Craft::$app->getCache()->add(self::LOG_CATEGORY . ':log:' . md5($key), 1, $ttl),
+            write: function(string $level, string $message): void {
+                match ($level) {
+                    Log::ERROR => Craft::error($message, self::LOG_CATEGORY),
+                    Log::WARNING => Craft::warning($message, self::LOG_CATEGORY),
+                    default => Craft::info($message, self::LOG_CATEGORY),
+                };
+            },
+        );
+    }
+
+    /**
+     * An error through the throttled log, falling back to Craft's logger if even that fails.
+     */
+    private function logError(string $message): void
+    {
+        try {
+            $this->getLog()->once(Log::ERROR, $message);
+        } catch (Throwable) {
+            Craft::error($message, self::LOG_CATEGORY);
         }
     }
 
@@ -179,7 +234,7 @@ class CookiebotEmbeds extends Plugin
         if ($this->vendors === null) {
             $this->vendors = new Vendors();
             foreach ($this->vendors->warnings() as $warning) {
-                Craft::error($warning, self::LOG_CATEGORY);
+                $this->logError($warning);
             }
         }
         return $this->vendors;
@@ -197,7 +252,7 @@ class CookiebotEmbeds extends Plugin
             siteTemplate: $config->placeholderTemplate,
             renderSite: fn(string $template, array $variables): string => Craft::$app->getView()->renderTemplate($template, $variables, View::TEMPLATE_MODE_SITE),
             translate: fn(string $message, string $category, array $params): string => Craft::t($category, $message, $params),
-            onError: fn(string $message) => Craft::error($message, self::LOG_CATEGORY),
+            onError: fn(string $message) => $this->logError($message),
             cache: Craft::$app->getPath()->getCompiledTemplatesPath() . DIRECTORY_SEPARATOR . self::LOG_CATEGORY,
         );
     }
@@ -216,12 +271,16 @@ class CookiebotEmbeds extends Plugin
             ));
             $config = (new Config())->resolve($this->getSettings()->toArray(), $site->handle, $handles);
         } catch (Throwable $e) {
-            Craft::error('Config could not be resolved, using the defaults: ' . $e->getMessage(), self::LOG_CATEGORY);
+            $this->logError('Config could not be resolved, using the defaults: ' . $e->getMessage());
             return new SiteConfig();
         }
 
         foreach ($config->warnings as $warning) {
-            Craft::warning("Site `$site->handle`: $warning", self::LOG_CATEGORY);
+            try {
+                $this->getLog()->once(Log::WARNING, "Site `$site->handle`: $warning");
+            } catch (Throwable) {
+                Craft::warning("Site `$site->handle`: $warning", self::LOG_CATEGORY);
+            }
         }
         return $config;
     }

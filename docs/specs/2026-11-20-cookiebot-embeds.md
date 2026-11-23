@@ -666,8 +666,26 @@ it is ticked.
       right variables, and a missing one falls back and logs. Live Preview (TN-14) was not exercised
       live: Craft routes a preview token to a route, not through the action trigger, so it is a
       plain site page; the `isPreview` allowance covers the action case. To be seen on site A in 6.1.*
-- [ ] **3.2 Logging** - log target category `cookiebot-embeds`, hourly throttle
+- [x] **3.2 Logging** - log target category `cookiebot-embeds`, hourly throttle
       Rules: BR-29 - Verify: TN-12
+      *Done 2026-11-23, with `src/services/Log.php` (pure: `once(level, message, key)` and
+      `unknownHosts(RewriteResult, siteHandle)`; the hourly claim and the writer are injected) and
+      `CookiebotEmbeds::getLog()`, which claims through Craft's cache (`add()`, one hour) and writes
+      in the `cookiebot-embeds` category. `LogTest` covers TN-12 with a fake cache and clock.
+      Decisions: the plugin registers its own Monolog target (`cookiebot-embeds`, level info, no
+      context), so unknown hosts reach `storage/logs/cookiebot-embeds-<date>.log` even where Craft's
+      default target keeps only warnings. An unknown sighting is one with a host, no vendor and an
+      action other than `allowed` (first-party is never recorded, providers and infra carry a
+      vendor, allow and filesystem hosts are `allowed`, fingerprint-only inline scripts have no
+      host); a host the developer marked themselves is still unknown. One line per host per site per
+      hour, naming how it was seen and the config keys that would name or allow it. Every other line
+      the plugin writes (config and `vendors.json` warnings, placeholder and rewrite failures) goes
+      through the same throttle, keyed by level and text, so BR-27's "logged once" holds across
+      requests rather than once per request. Repeats within a request do not ask the cache; a cache
+      that fails means the line is written. Logging runs after the rewrite in its own `try`, so a
+      logging failure never costs the page its rewrite. Smoke-tested in the local Craft 5 site:
+      three requests to a page with an unknown host wrote one `[cookiebot-embeds.INFO]` line to the
+      plugin's own file, and clearing the data cache let the next request write it again.*
 - [ ] **4.1 Table** - `src/migrations/Install.php`, `src/records/Sighting.php`
       Rules: BR-23 - Verify: B5 #4 (record mapping), TS-7
 - [ ] **4.2 Recorder** - `src/services/Report.php` (batched upsert, cache throttle, failures
