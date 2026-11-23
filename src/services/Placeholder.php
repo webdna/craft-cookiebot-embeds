@@ -30,6 +30,8 @@ final class Placeholder
 
     private ?Environment $twig = null;
 
+    private bool $siteTemplateFailed = false;
+
     /** @var array<string, string> Rendered placeholders by their variables, per request */
     private array $rendered = [];
 
@@ -85,10 +87,12 @@ final class Placeholder
      */
     private function renderUncached(array $variables): string
     {
-        if ($this->siteTemplate !== null && $this->renderSite !== null) {
+        if ($this->siteTemplate !== null && $this->renderSite !== null && !$this->siteTemplateFailed) {
             try {
                 return trim(($this->renderSite)($this->siteTemplate, $variables));
             } catch (Throwable $e) {
+                // Not tried again this request, so a broken template is one log line per page.
+                $this->siteTemplateFailed = true;
                 $this->error("The placeholder template `$this->siteTemplate` failed, using the default: " . $e->getMessage());
             }
         }

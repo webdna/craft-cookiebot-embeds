@@ -133,8 +133,11 @@ final class PlaceholderTest extends TestCase
         );
 
         $html = $placeholder->render('marketing', null, 'iframe', null, null);
+        $other = $placeholder->render('statistics', null, 'script', null, null);
 
         $this->assertStringStartsWith('<span class="cbe-placeholder cookieconsent-optout-marketing"', $html);
+        $this->assertStringStartsWith('<span class="cbe-placeholder cookieconsent-optout-statistics"', $other);
+        // Not retried for the rest of the request: one log line per page.
         $this->assertCount(1, $errors);
         $this->assertStringContainsString('`_missing` failed, using the default: Unable to find the template', $errors[0]);
     }

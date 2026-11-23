@@ -637,10 +637,35 @@ it is ticked.
       page with every script and iframe removed, 0.04 ms (budget 0.5). `CBE_BENCH=1` prints the
       timings. For 3.1: the fast-exit figure is `rewrite()` alone, so the hook should make that
       check before it loads the provider list or builds the services.*
-- [ ] **3.1 Render hook** - `src/CookiebotEmbeds.php` (event on
+- [x] **3.1 Render hook** - `src/CookiebotEmbeds.php` (event on
       `View::EVENT_AFTER_RENDER_PAGE_TEMPLATE`), request and response-format guards, site hosts and
       filesystem URL hosts gathered once per request
       Rules: BR-1, BR-2, BR-3 - Verify: TS-9, TN-1, TN-14, TN-17
+      *Done 2026-11-23, with `src/services/PageFilter.php` (pure: `isSitePage()`, `isHtml()`,
+      `hosts()`, `filter()`) and `Rewriter::mightRewrite()` (BR-5, public so the hook can call it
+      first). `PageFilterTest` covers TS-9 step 1 (every fixture with `enabled` false), TN-1, TN-14
+      and TN-17. Decisions: the hook is registered only for web requests. A page is a site page when
+      the request is not CP or console, the template mode is `site`, and it is not an action
+      request unless it is a preview (TN-14). HTML is decided as Craft's TemplateResponseFormatter
+      does after the render: a Content-Type set by `{% header %}` wins, otherwise the template
+      file's extension once `.twig` is removed, and no extension is HTML. Order: request guard,
+      `enabled`, the fast exit, then the content type, so a disabled site or a page with nothing to
+      gate costs no provider list and no template lookup. Site hosts are every site's base URL host
+      and filesystem hosts every filesystem's root URL host, gathered on first use per request; the
+      Host header is never read (BR-3), though a base URL built from `@web` carries the host Craft
+      resolved. Any throw is logged and the original output served (B3). The unit bootstrap now loads
+      the `Craft` class and sets `@app`, without an app, because Craft's `FileHelper` reads its MIME
+      map from there. A broken `placeholderTemplate` is now tried once per request, so it logs one
+      line per page (2.3's Placeholder retried it for each distinct placeholder).
+      Smoke-tested in a throwaway local Craft 5 site (ddev, not committed): a page is rewritten, with
+      a `registerJsFile()` script gated (so the hook sees output after `endPage()`), an absolute
+      first-party script left and Alpine attributes byte for byte; `.json.twig`, `.xml.twig` and a
+      `{% header %}` JSON page are identical to the uninstalled site (TN-1); a fragment is rewritten
+      (TN-17); with `enabled` false the page is byte-identical to the uninstalled site (TS-9 step 2,
+      locally; site A still owed in 6.1); `placeholderTemplate` renders the site's template with the
+      right variables, and a missing one falls back and logs. Live Preview (TN-14) was not exercised
+      live: Craft routes a preview token to a route, not through the action trigger, so it is a
+      plain site page; the `isPreview` allowance covers the action case. To be seen on site A in 6.1.*
 - [ ] **3.2 Logging** - log target category `cookiebot-embeds`, hourly throttle
       Rules: BR-29 - Verify: TN-12
 - [ ] **4.1 Table** - `src/migrations/Install.php`, `src/records/Sighting.php`

@@ -65,10 +65,18 @@ final class Rewriter
     ) {
     }
 
+    /**
+     * BR-5's fast exit: false when the page has no script or iframe, so nothing can be gated and
+     * the services need not even be built.
+     */
+    public static function mightRewrite(string $html): bool
+    {
+        return stripos($html, '<script') !== false || stripos($html, '<iframe') !== false;
+    }
+
     public function rewrite(string $html): RewriteResult
     {
-        // BR-5: nothing to gate without a script or an iframe.
-        if (stripos($html, '<script') === false && stripos($html, '<iframe') === false) {
+        if (!self::mightRewrite($html)) {
             return new RewriteResult($html);
         }
 

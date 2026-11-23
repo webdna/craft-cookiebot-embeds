@@ -3,22 +3,30 @@
 namespace webdna\cookiebotembeds;
 
 use Craft;
+use craft\base\FsInterface;
 use craft\base\Model;
 use craft\base\Plugin;
+use craft\events\TemplateEvent;
 use craft\models\Site;
+use craft\web\Request as WebRequest;
+use craft\web\Response as WebResponse;
 use craft\web\View;
 use Throwable;
 use webdna\cookiebotembeds\models\Settings;
 use webdna\cookiebotembeds\models\SiteConfig;
+use webdna\cookiebotembeds\services\Classifier;
 use webdna\cookiebotembeds\services\Config;
+use webdna\cookiebotembeds\services\PageFilter;
 use webdna\cookiebotembeds\services\Placeholder;
+use webdna\cookiebotembeds\services\Rewriter;
 use webdna\cookiebotembeds\services\Vendors;
+use yii\base\Event;
 
 /**
  * Cookiebot Embeds: third-party embeds and scripts wait for the visitor's Cookiebot consent.
  *
  * Configuration comes only from `config/cookiebot-embeds.php`; there is no CP settings page
- * (BR-27). The render hook arrives in task 3.1.
+ * (BR-27). The render hook rewrites site pages (BR-1).
  *
  * @method Settings getSettings()
  */
@@ -42,9 +50,115 @@ class CookiebotEmbeds extends Plugin
 
     private ?Vendors $vendors = null;
 
+    /** @var list<string>|null Every site's base URL host, gathered once per request */
+    private ?array $siteHosts = null;
+
+    /** @var list<string>|null Every filesystem's public URL host, gathered once per request */
+    private ?array $filesystemHosts = null;
+
     public function init(): void
     {
         parent::init();
+
+        // BR-1: console requests render no pages for visitors.
+        if (Craft::$app->getRequest()->getIsConsoleRequest()) {
+            return;
+        }
+
+        // Fired after endPage(), so head and body scripts registered with the view (SEOmatic,
+        // {% js %}) are already in the output.
+        Event::on(View::class, View::EVENT_AFTER_RENDER_PAGE_TEMPLATE, function(TemplateEvent $event): void {
+            $event->output = $this->filterPage($event);
+        });
+    }
+
+    /**
+     * The render hook's work for one page template (BR-1, BR-2, BR-3, BR-5). Reads the request
+     * only to decide whether this is a site page, never its cookies, headers or user (BR-3).
+     * Never throws: on any failure the original output is served (B3).
+     */
+    private function filterPage(TemplateEvent $event): string
+    {
+        $output = $event->output;
+        try {
+            $request = Craft::$app->getRequest();
+            if (!$request instanceof WebRequest || !PageFilter::isSitePage(
+                false,
+                $request->getIsCpRequest(),
+                $request->getIsActionRequest(),
+                $request->getIsPreview(),
+                $event->templateMode,
+            )) {
+                return $output;
+            }
+
+            // The cheap checks first, so a disabled site or a page with nothing to gate costs no
+            // provider list, no services and no template lookup.
+            $site = Craft::$app->getSites()->getCurrentSite();
+            $config = $this->getSiteConfig($site);
+            if (!$config->enabled || !Rewriter::mightRewrite($output)) {
+                return $output;
+            }
+
+            $response = Craft::$app->getResponse();
+            $contentType = $response instanceof WebResponse ? $response->getHeaders()->get('content-type') : null;
+            $templateFile = Craft::$app->getView()->resolveTemplate($event->template, $event->templateMode);
+            if (!PageFilter::isHtml(is_string($contentType) ? $contentType : null, $templateFile === false ? null : $templateFile)) {
+                return $output;
+            }
+
+            $result = PageFilter::filter(
+                $output,
+                $config,
+                fn(): Rewriter => $this->createRewriter($config),
+                fn(string $message) => Craft::error($message, self::LOG_CATEGORY),
+            );
+            return $result === null ? $output : $result->html;
+        } catch (Throwable $e) {
+            Craft::error('The page was served unchanged: ' . $e->getMessage(), self::LOG_CATEGORY);
+            return $output;
+        }
+    }
+
+    /**
+     * The rewriter for one site's config, with the hosts BR-6 steps 1 and 2 treat as first-party.
+     */
+    private function createRewriter(SiteConfig $config): Rewriter
+    {
+        $vendors = $this->getVendors();
+        return new Rewriter(
+            new Classifier($config, $vendors, $this->siteHosts(), $this->filesystemHosts()),
+            $vendors,
+            $config,
+            $this->createPlaceholder($config)->renderer(),
+        );
+    }
+
+    /**
+     * BR-6 step 1: every site's base URL host. A base URL built from `@web` takes the host Craft
+     * resolved for the request; the plugin never reads the Host header itself (BR-3).
+     *
+     * @return list<string>
+     */
+    private function siteHosts(): array
+    {
+        return $this->siteHosts ??= PageFilter::hosts(array_map(
+            fn(Site $site): ?string => $site->getBaseUrl(),
+            Craft::$app->getSites()->getAllSites(true),
+        ));
+    }
+
+    /**
+     * BR-6 step 2: the hosts of every filesystem's public URL.
+     *
+     * @return list<string>
+     */
+    private function filesystemHosts(): array
+    {
+        return $this->filesystemHosts ??= PageFilter::hosts(array_map(
+            fn(FsInterface $fs): ?string => $fs->getRootUrl(),
+            Craft::$app->getFs()->getAllFilesystems(),
+        ));
     }
 
     /**
