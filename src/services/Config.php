@@ -30,6 +30,9 @@ final class Config
     /** @var list<string> */
     private array $warnings = [];
 
+    /** What the warnings name as the source of a bad value. */
+    private string $source = 'Config';
+
     /**
      * Resolves one site's configuration.
      *
@@ -44,6 +47,7 @@ final class Config
     public function resolve(array $raw, string $siteHandle, array $siteHandles): SiteConfig
     {
         $this->warnings = [];
+        $this->source = 'Config';
         $defaults = new SiteConfig();
 
         $value = function(string $key) use ($raw, $siteHandle, $siteHandles): mixed {
@@ -68,6 +72,26 @@ final class Config
             report: $this->bool('report', $value('report'), $defaults->report),
             warnings: $this->warnings,
         );
+    }
+
+    /**
+     * Normalises a list of provider entries (`$keyField` `match`) or fingerprints (`pattern`) from
+     * outside a site's config, by the same rules as the config's `vendors` and `fingerprints`. Used
+     * for the shipped provider list (BR-28). Never throws; bad entries are dropped and described.
+     *
+     * @param string $source What the warnings name as the source, e.g. `vendors.json`
+     * @return array{entries: list<array<string, string>>, warnings: list<string>}
+     */
+    public function normaliseEntries(string $source, string $key, string $keyField, mixed $value): array
+    {
+        $this->warnings = [];
+        $this->source = $source;
+        if ($value === null) {
+            $this->warn($key, 'is missing', null, 'empty list');
+        }
+        $entries = $this->entries($key, $keyField, $value);
+
+        return ['entries' => $entries, 'warnings' => $this->warnings];
     }
 
     /**
@@ -237,7 +261,7 @@ final class Config
 
     private function warn(string $key, string $problem, mixed $value, string $using): void
     {
-        $this->warnings[] = sprintf('Config `%s` %s; got %s. Using %s.', $key, $problem, self::describe($value), $using);
+        $this->warnings[] = sprintf('%s `%s` %s; got %s. Using %s.', $this->source, $key, $problem, self::describe($value), $using);
     }
 
     private static function describe(mixed $value): string

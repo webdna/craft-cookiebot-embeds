@@ -10,6 +10,7 @@ use Throwable;
 use webdna\cookiebotembeds\models\Settings;
 use webdna\cookiebotembeds\models\SiteConfig;
 use webdna\cookiebotembeds\services\Config;
+use webdna\cookiebotembeds\services\Vendors;
 
 /**
  * Cookiebot Embeds: third-party embeds and scripts wait for the visitor's Cookiebot consent.
@@ -37,6 +38,8 @@ class CookiebotEmbeds extends Plugin
      */
     private array $siteConfigs = [];
 
+    private ?Vendors $vendors = null;
+
     public function init(): void
     {
         parent::init();
@@ -49,6 +52,21 @@ class CookiebotEmbeds extends Plugin
     public function getSiteConfig(Site $site): SiteConfig
     {
         return $this->siteConfigs[$site->handle] ??= $this->resolveSiteConfig($site);
+    }
+
+    /**
+     * The shipped provider list (BR-28), loaded once per request; its warnings are logged then.
+     * A missing or broken file leaves the list empty, so every third party fails closed (TN-13).
+     */
+    public function getVendors(): Vendors
+    {
+        if ($this->vendors === null) {
+            $this->vendors = new Vendors();
+            foreach ($this->vendors->warnings() as $warning) {
+                Craft::error($warning, self::LOG_CATEGORY);
+            }
+        }
+        return $this->vendors;
     }
 
     protected function createSettingsModel(): ?Model

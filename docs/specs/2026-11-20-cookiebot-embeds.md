@@ -531,9 +531,20 @@ it is ticked.
       `Config::compilePattern()` is shared with 1.3. A missing `vendor` name falls back to the
       match. Warnings are logged once per request per site by `CookiebotEmbeds::getSiteConfig()`;
       the hourly throttle is 3.2's.*
-- [ ] **1.3 Provider list** - `src/data/vendors.json` seeded from the cookiebot-check skill's
+- [x] **1.3 Provider list** - `src/data/vendors.json` seeded from the cookiebot-check skill's
       `VENDORS`, plus shipped fingerprints; `src/services/Vendors.php`
       Rules: BR-9, BR-14, BR-28 - Verify: B5 #4
+      *Done 2026-11-23. The file is `{"vendors": [...], "fingerprints": [...]}`, 58 providers and 17
+      fingerprints. The skill's static-maps entry (category `unknown`, not a BR-28 category) was
+      dropped: images are not gated. Fingerprints were authored (the skill has none) and there is
+      deliberately no `gtag(` one, because the Consent Mode defaults snippet calls
+      `gtag('consent', 'default', ...)` and must load first; a test proves the GTM and Consent Mode
+      snippets match nothing. BR-9 is coded as `Vendors::INFRA` (plus `INFRA_IDS` for the tag-level
+      ids, applied in 2.1/2.2) and a test keeps it identical to the file's infra entries. The file
+      is validated by `Config::normaliseEntries()`, so it follows the same rules as a site's
+      `vendors` and `fingerprints`. `Vendors::firstMatch()` and `matchingFingerprints()` are static
+      so 2.1 reuses them for site overrides. `CookiebotEmbeds::getVendors()` memoises the list and
+      logs its warnings at `error` (TN-13).*
 - [ ] **1.4 CI and hygiene** - `.github/workflows/ci.yml` (PHP 8.2, 8.4: validate, check, hygiene),
       `.gitignore` entry for `.github/forbidden-names.txt`
       Rules: BR-30 - Verify: B5 #5, #6
