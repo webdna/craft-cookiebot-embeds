@@ -601,9 +601,27 @@ it is ticked.
       fingerprint has an empty host. Fixture hosts besides `example.com/.org/.net` are made up
       (`example-unlisted.org`, `example-cdn.net`, `evil.net`) and name no client; BR-30's wording
       asks for example domains only, so Sam may want them moved under `.example` or `.test`.*
-- [ ] **2.3 Placeholder** - `src/templates/_placeholder.twig`, renderer callback injected into the
+- [x] **2.3 Placeholder** - `src/templates/_placeholder.twig`, renderer callback injected into the
       rewriter, `src/translations/en/cookiebot-embeds.php`
       Rules: BR-17, BR-18 - Verify: B5 #4, TS-5
+      *Done 2026-11-23, with `src/services/Placeholder.php` (pure; `new Placeholder(siteTemplate,
+      renderSite, translate, onError, cache)`, then `renderer()` for the rewriter) and
+      `CookiebotEmbeds::createPlaceholder(SiteConfig)`, which 3.1 calls. TS-5 step 0 is
+      `PlaceholderTest`. Decisions: the plugin's template is rendered by a small Twig environment of
+      the service's own, with a `t` filter of Craft's call shape, so the unit test runs the same
+      render as a live site; live, `t` is `Craft::t` and Twig compiles to Craft's compiled-templates
+      path. A `placeholderTemplate` goes through Craft's view in site mode; if it throws, the error
+      is logged and the default is used, and if the default fails no placeholder is inserted (the
+      embed stays gated). Renders are memoised per request by their variables. The root is a
+      `<span>`, not a `<div>`, because a pasted iframe often sits in a `<p>` that a div would split;
+      uc.js 2.146.0 hides `cookieconsent-optout-*` with a `data-cookieconsent-display-none`
+      attribute and shows it by removing that, never by setting `display`, so the element keeps its
+      natural display and a site styles `.cbe-placeholder` as it likes. Root attributes:
+      `class="cbe-placeholder cookieconsent-optout-<category>"`, `data-cbe-placeholder="<category>"`,
+      `data-cbe-kind`, and `data-cbe-width`/`data-cbe-height` only when given (section 6). Copy, all in
+      the `cookiebot-embeds` category: "{vendor} content is blocked until you accept {category}
+      cookies." (or "This content ..." with no vendor), the category name itself, and the link text
+      "Change cookie settings".*
 - [ ] **2.4 Benchmark** - `tests/fixtures/benchmark.html`, budget test
       Rules: BR-5 - Verify: B5 #4
 - [ ] **3.1 Render hook** - `src/CookiebotEmbeds.php` (event on

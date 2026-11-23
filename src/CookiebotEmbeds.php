@@ -6,10 +6,12 @@ use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\models\Site;
+use craft\web\View;
 use Throwable;
 use webdna\cookiebotembeds\models\Settings;
 use webdna\cookiebotembeds\models\SiteConfig;
 use webdna\cookiebotembeds\services\Config;
+use webdna\cookiebotembeds\services\Placeholder;
 use webdna\cookiebotembeds\services\Vendors;
 
 /**
@@ -67,6 +69,23 @@ class CookiebotEmbeds extends Plugin
             }
         }
         return $this->vendors;
+    }
+
+    /**
+     * The placeholder renderer for one site's config (BR-17): its `placeholderTemplate` through
+     * Craft's view in site mode, otherwise the plugin's own template with Craft's translations.
+     * Failures are logged, never thrown. The render hook (task 3.1) passes `renderer()` to the
+     * rewriter.
+     */
+    public function createPlaceholder(SiteConfig $config): Placeholder
+    {
+        return new Placeholder(
+            siteTemplate: $config->placeholderTemplate,
+            renderSite: fn(string $template, array $variables): string => Craft::$app->getView()->renderTemplate($template, $variables, View::TEMPLATE_MODE_SITE),
+            translate: fn(string $message, string $category, array $params): string => Craft::t($category, $message, $params),
+            onError: fn(string $message) => Craft::error($message, self::LOG_CATEGORY),
+            cache: Craft::$app->getPath()->getCompiledTemplatesPath() . DIRECTORY_SEPARATOR . self::LOG_CATEGORY,
+        );
     }
 
     protected function createSettingsModel(): ?Model

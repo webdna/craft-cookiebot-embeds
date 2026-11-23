@@ -55,7 +55,7 @@ final class Rewriter
 
     /**
      * @param Closure(string $category, ?string $vendor, string $kind, ?string $width, ?string $height): string|null $placeholder
-     *        Renders the placeholder (BR-17; task 2.3). Null inserts none.
+     *        Renders the placeholder (BR-17), normally `Placeholder::renderer()`. Null inserts none.
      */
     public function __construct(
         private readonly Classifier $classifier,

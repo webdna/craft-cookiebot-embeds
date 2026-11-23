@@ -1,0 +1,22 @@
+{#-
+  The default placeholder (BR-17, BR-18), inserted after a gated iframe or before a gated widget
+  script in the body. Cookiebot hides it once `category` is accepted, because of the
+  `cookieconsent-optout-<category>` class.
+
+  Variables: category, vendor (may be null), kind (`iframe` or `script`), width and height (the
+  iframe's own attribute values, or null).
+
+  The root is a span, so it is valid inside the paragraph a pasted embed often sits in. It has no
+  style attribute (strict CSP) and no framework classes: style `.cbe-placeholder` in the site, or
+  set `placeholderTemplate` to replace this file. The embed's size is given as data attributes
+  only.
+-#}
+{%- set label = category|t('cookiebot-embeds') -%}
+<span class="cbe-placeholder cookieconsent-optout-{{ category }}" data-cbe-placeholder="{{ category }}" data-cbe-kind="{{ kind }}"
+{%- if width is not empty %} data-cbe-width="{{ width }}"{% endif %}
+{%- if height is not empty %} data-cbe-height="{{ height }}"{% endif %}>
+{%- if vendor is not empty -%}
+<span class="cbe-placeholder__message">{{ '{vendor} content is blocked until you accept {category} cookies.'|t('cookiebot-embeds', {vendor: vendor, category: label}) }}</span>
+{%- else -%}
+<span class="cbe-placeholder__message">{{ 'This content is blocked until you accept {category} cookies.'|t('cookiebot-embeds', {category: label}) }}</span>
+{%- endif %} <a class="cbe-placeholder__link" href="javascript:Cookiebot.renew()">{{ 'Change cookie settings'|t('cookiebot-embeds') }}</a></span>
