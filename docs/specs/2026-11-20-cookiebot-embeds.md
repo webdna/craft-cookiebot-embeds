@@ -519,9 +519,18 @@ it is ticked.
       Rules: BR-31 - Verify: B5 #1-#3
       *Done 2026-11-23. Also `.gitignore` and `.ddev/config.yaml`: B5 runs through DDEV (profile
       section 2). The README carries both BR-31 disclaimers now; 6.1 adds the rest.*
-- [ ] **1.2 Settings and config** - `src/models/Settings.php`, `src/config.php`,
+- [x] **1.2 Settings and config** - `src/models/Settings.php`, `src/config.php`,
       `src/services/Config.php` (normalisation, multi-site keys)
       Rules: BR-2, BR-27 - Verify: B5 #4, TN-10
+      *Done 2026-11-23, with `src/models/SiteConfig.php` (the typed result, and the only place the
+      defaults are written). Decisions: `Settings` properties are `mixed` and `null` means unset,
+      because Craft assigns the file's values onto the model and a typed property would throw. A
+      per-site array has only site handles and `*` (fallback) as keys. A bad entry in `vendors`,
+      `fingerprints` or `allow` drops that entry only, not the whole key. Fingerprints are written
+      without delimiters (as in the cookiebot-check skill) and match case-sensitively;
+      `Config::compilePattern()` is shared with 1.3. A missing `vendor` name falls back to the
+      match. Warnings are logged once per request per site by `CookiebotEmbeds::getSiteConfig()`;
+      the hourly throttle is 3.2's.*
 - [ ] **1.3 Provider list** - `src/data/vendors.json` seeded from the cookiebot-check skill's
       `VENDORS`, plus shipped fingerprints; `src/services/Vendors.php`
       Rules: BR-9, BR-14, BR-28 - Verify: B5 #4
