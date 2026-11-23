@@ -1,0 +1,81 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+
+      # The runner's own PHP, not DDEV: the plugin has no database or service to stand up.
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+
+      # composer.lock is not committed (a library); config.platform.php holds resolution at 8.2.
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Validate composer.json
+        run: composer validate --strict --no-plugins
+
+      - name: ECS, PHPStan and the unit suite
+        run: composer check
+
+  # Repo hygiene runs once: it reads files, not PHP.
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # BR-30, profile V5. The list names clients, so it lives in the FORBIDDEN_NAMES secret
+      # (one pattern per line), never in this public repo. Only file names are printed on a hit,
+      # never the matching line, so a failure cannot publish a name in the log. Pull requests from
+      # forks get no secrets and skip with a notice; anything else without the secret fails.
+      - name: No client names or domains
+        env:
+          FORBIDDEN_NAMES: ${{ secrets.FORBIDDEN_NAMES }}
+          FROM_FORK: ${{ github.event.pull_request.head.repo.fork || false }}
+        run: |
+          if [ -z "$FORBIDDEN_NAMES" ]; then
+            if [ "$FROM_FORK" = "true" ]; then
+              echo "::notice::FORBIDDEN_NAMES is not available to fork pull requests; the client-name check is skipped."
+              exit 0
+            fi
+            echo "::error::The FORBIDDEN_NAMES repository secret is not set."
+            exit 1
+          fi
+          # A blank line would match every line, so blank lines are dropped.
+          printf '%s\n' "$FORBIDDEN_NAMES" | grep -v '^[[:space:]]*$' > .github/forbidden-names.txt
+          if grep -rliE -f .github/forbidden-names.txt src tests docs README.md CHANGELOG.md; then
+            echo "::error::The files above contain a client name or domain (BR-30)."
+            exit 1
+          fi
+
+      # Profile V6.
+      - name: No en or em dashes
+        run: |
+          if LC_ALL=C grep -rn -e $'\xe2\x80\x93' -e $'\xe2\x80\x94' src tests docs README.md CHANGELOG.md; then
+            echo "::error::En or em dashes found; use a hyphen, colon, comma or parentheses."
+            exit 1
+          fi
+
+      # BR-31: both disclaimers stay in the README.
+      - name: README disclaimers
+        run: |
+          grep -qi 'not affiliated with' README.md
+          grep -qi 'Usercentrics' README.md
+          grep -qi 'does not guarantee' README.md

@@ -545,9 +545,20 @@ it is ticked.
       `vendors` and `fingerprints`. `Vendors::firstMatch()` and `matchingFingerprints()` are static
       so 2.1 reuses them for site overrides. `CookiebotEmbeds::getVendors()` memoises the list and
       logs its warnings at `error` (TN-13).*
-- [ ] **1.4 CI and hygiene** - `.github/workflows/ci.yml` (PHP 8.2, 8.4: validate, check, hygiene),
+- [x] **1.4 CI and hygiene** - `.github/workflows/ci.yml` (PHP 8.2, 8.4: validate, check, hygiene),
       `.gitignore` entry for `.github/forbidden-names.txt`
       Rules: BR-30 - Verify: B5 #5, #6
+      *Done 2026-11-23. Two jobs: `check` (PHP 8.2 and 8.4 on the runner's own PHP via
+      setup-php: install, validate, `composer check`) and `hygiene` once (client names, dashes,
+      the BR-31 README disclaimers). The name list cannot be in a public repo, so CI writes
+      `.github/forbidden-names.txt` from the `FORBIDDEN_NAMES` repository secret (one pattern per
+      line; blank lines dropped, since one would match everything). A hit prints file names only
+      (`grep -l`), never the line, so a failure cannot publish a name in the log. Without the
+      secret the step fails, except on pull requests from forks, which get no secrets and skip
+      with a notice. **Owed by Sam before the first push: add the `FORBIDDEN_NAMES` secret and the
+      local `.github/forbidden-names.txt`** (B5 #5 exits 2 without it). Each hygiene step was run
+      locally under `bash -e` in every branch (secret missing on push and on a fork, clean list,
+      blank lines, a hit, a removed disclaimer); the workflow itself is unproved until GitHub runs it.*
 - [ ] **2.1 Classifier** - `src/services/Classifier.php`
       Rules: BR-6, BR-7, BR-8, BR-9 - Verify: B5 #4, TN-8, TN-9
 - [ ] **2.2 Tag scanner and rewriter** - `src/services/Rewriter.php`, fixtures `iframes`,
