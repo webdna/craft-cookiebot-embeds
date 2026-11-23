@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script defer src="/assets/js/alpine.min.js"></script>
+</head>
+<body x-data="{ open: false, url: '' }" @keydown.escape.window="open = false">
+    <div x-data="video" @click.outside="open = false" :class="{ 'is-open': open }">
+        <iframe :src="url" x-bind:title="title" data-cookieblock-src="https://www.youtube.com/embed/abc123" @load="loaded = true" x-on:error='failed = true' width="560" height="315" data-cookieconsent="marketing" data-cbe-gated="marketing"></iframe><div data-cbe-placeholder class="cookieconsent-optout-marketing">YouTube|iframe|560x315</div>
+        <iframe :src="url" x-show="open"></iframe>
+    </div>
+    <template x-if="open">
+        <iframe data-cookieblock-src="https://player.vimeo.com/video/123456" x-transition.opacity data-cookieconsent="marketing" data-cbe-gated="marketing"></iframe><div data-cbe-placeholder class="cookieconsent-optout-marketing">Vimeo|iframe|-x-</div>
+    </template>
+    <button type="button" @click="open = !open" x-text="open ? 'Close' : 'Open'"></button>
+    <div data-cbe-placeholder class="cookieconsent-optout-marketing">unknown|script|-x-</div><script type="text/plain" x-on:load="ready()" src="https://cdn.example-unlisted.org/widget.js" @error='fail()' :data-x="y" data-cookieconsent="marketing" data-cbe-gated="marketing"></script>
+</body>
+</html>

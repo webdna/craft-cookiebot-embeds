@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Iframes</title>
+</head>
+<body>
+    <h1>Embeds</h1>
+    <iframe width="560" height="315" data-cookieblock-src="https://www.youtube.com/embed/abc123" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay" allowfullscreen data-cookieconsent="marketing" data-cbe-gated="marketing"></iframe><div data-cbe-placeholder class="cookieconsent-optout-marketing">YouTube|iframe|560x315</div>
+    <p>Vimeo, protocol-relative:</p>
+    <iframe data-cookieblock-src="//player.vimeo.com/video/123456?dnt=1" width="640" height="360" data-cookieconsent="marketing" data-cbe-gated="marketing"></iframe><div data-cbe-placeholder class="cookieconsent-optout-marketing">Vimeo|iframe|640x360</div>
+    <iframe data-cookieblock-src='https://www.google.com/maps/embed?pb=!1m18' style="border:0;" loading="lazy" data-cookieconsent="marketing" data-cbe-gated="marketing"></iframe><div data-cbe-placeholder class="cookieconsent-optout-marketing">Google Maps|iframe|-x-</div>
+    <iframe data-cookieblock-src="https://widgets.example-unlisted.org/frame" data-id=42 data-cookieconsent="marketing" data-cbe-gated="marketing"></iframe><div data-cbe-placeholder class="cookieconsent-optout-marketing">unknown|iframe|-x-</div>
+    <iframe data-cookieblock-src="https://evil.example.net/a" data-cookieblock-src="https://evil.example.net/b" data-cookieconsent="marketing" data-cbe-gated="marketing"></iframe><div data-cbe-placeholder class="cookieconsent-optout-marketing">unknown|iframe|-x-</div>
+    <iframe src="https://www.example.com/form/embed"></iframe>
+    <iframe src="/local/embed"></iframe>
+    <iframe src="https://widgets.example.org/booking"></iframe>
+    <iframe data-cookieblock-src="https://www.youtube.com/embed/abc&amp;rel=0" width="100%" data-cookieconsent="marketing" data-cbe-gated="marketing"></iframe><div data-cbe-placeholder class="cookieconsent-optout-marketing">YouTube|iframe|100%x-</div>
+    <iframe></iframe>
+    <iframe src=""></iframe>
+    <iframe src="about:blank"></iframe>
+    <iframe srcdoc="<p>Hello</p>" src="https://www.youtube.com/embed/abc123"></iframe>
+</body>
+</html>

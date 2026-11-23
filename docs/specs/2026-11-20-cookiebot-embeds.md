@@ -575,10 +575,32 @@ it is ticked.
       so they are static helpers (`isAlreadyMarked(tag, attributes)`, `isInfraById(attributes)`,
       attribute names lower-case, null for a bare attribute) that 2.2's parser calls. BR-11's
       inline-body scan is 2.2's.*
-- [ ] **2.2 Tag scanner and rewriter** - `src/services/Rewriter.php`, fixtures `iframes`,
+- [x] **2.2 Tag scanner and rewriter** - `src/services/Rewriter.php`, fixtures `iframes`,
       `scripts-external`, `scripts-inline`, `fingerprint`, `already-marked`, `infra`,
       `non-js-types`, `alpine-attributes`, `malformed`, `widget-body`
       Rules: BR-4, BR-5, BR-10 to BR-16 - Verify: B5 #4, TS-1 #1, TS-2 #1-2, TS-4, TN-2 to TN-8
+      *Done 2026-11-23, with `src/models/RewriteResult.php` (the page plus de-duplicated sightings
+      `{host, vendor, category, action, kind}` for 4.2). `new Rewriter(Classifier, Vendors,
+      SiteConfig, ?Closure placeholder)`, then `rewrite(html)`; the placeholder callback takes
+      `(category, vendor, kind, width, height)` and 2.3 supplies the real one. Each fixture has a
+      `<name>.expected.html`, regenerated with `CBE_UPDATE_FIXTURES=1` and reviewed by diff; the
+      suite also checks every fixture is idempotent and that only rewritten tags change (BR-4).
+      Decisions: the scanner skips comments, `<textarea>` contents and script and iframe contents,
+      and ends a script at the first `</script` as a browser does; an unclosed start tag or script
+      ends the scan with the rest untouched. A page with `<head>` or `<html>` is in the body only
+      after `<body`; a fragment is all body (TN-17). BR-12's JavaScript types are the HTML
+      standard's full list (legacy ones such as `application/x-javascript` run, so they are
+      gated); a type with parameters (`text/javascript; charset=utf-8`) does not run and is left.
+      New attributes go at the end of the tag, after the last attribute, so `/>` and spacing stay;
+      a missing `type` is added first. Every `src` on a gated iframe is renamed, because a browser
+      falls back to a second one. An inline body that names Cookiebot or Tag Manager is never
+      gated. In inline bodies a protocol-relative `//host` counts only straight after a quote, so a
+      `//comment.like.this` is not a URL; `\/` counts as `/`. Sightings: first-party is not
+      recorded; `allow` and filesystem hosts are `allowed`; other ungated third parties `left`;
+      modules are `skipped` only when they would have been gated; an inline script known only by a
+      fingerprint has an empty host. Fixture hosts besides `example.com/.org/.net` are made up
+      (`example-unlisted.org`, `example-cdn.net`, `evil.net`) and name no client; BR-30's wording
+      asks for example domains only, so Sam may want them moved under `.example` or `.test`.*
 - [ ] **2.3 Placeholder** - `src/templates/_placeholder.twig`, renderer callback injected into the
       rewriter, `src/translations/en/cookiebot-embeds.php`
       Rules: BR-17, BR-18 - Verify: B5 #4, TS-5

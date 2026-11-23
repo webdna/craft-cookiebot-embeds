@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <SCRIPT SRC="https://cdn.example-unlisted.org/upper.js"></SCRIPT>
+    <script data-note="a > b" src='https://cdn.example-unlisted.org/quoted.js' data-other='x "y" z'></script>
+    <script
+        async
+        src="https://cdn.example-unlisted.org/multiline.js"
+        data-split="1"
+    ></script>
+    <script src = "https://cdn.example-unlisted.org/spaced.js" ></script>
+    <script>var close = "</script>"; var after = 'https://cdn.example-unlisted.org/after.js';</script>
+    <script src="https://cdn.example-unlisted.org/selfclosed.js" />
+    </script>
+</head>
+<body>
+    <!-- <iframe src="https://www.youtube.com/embed/commented"></iframe> -->
+    <!-- <script src="https://cdn.example-unlisted.org/commented.js"></script> -->
+    <textarea name="code"><iframe src="https://www.youtube.com/embed/in-textarea"></iframe></textarea>
+    <p>Text with &lt;iframe src="https://www.youtube.com/embed/escaped"&gt; escaped.</p>
+    <iframe src="https://www.youtube.com/embed/last" width="1"

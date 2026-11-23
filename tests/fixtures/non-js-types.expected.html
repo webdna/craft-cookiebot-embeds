@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "url": "https://www.example.com", "sameAs": ["https://www.youtube.com/@example", "https://www.instagram.com/example"]}</script>
+    <script type="application/json" id="config">{"tracker": "https://cdn.example-unlisted.org/tracker.js"}</script>
+    <script type="importmap">{"imports": {"lib": "https://cdn.example-unlisted.org/lib.mjs"}}</script>
+    <script type="module" src="https://cdn.example-unlisted.org/app.mjs"></script>
+    <script type="module" src="/assets/js/main.mjs"></script>
+    <script type="module">import lib from 'https://cdn.example-unlisted.org/lib.mjs'; lib();</script>
+    <script type="text/javascript; charset=utf-8" src="https://cdn.example-unlisted.org/params.js"></script>
+</head>
+<body>
+    <script type="text/x-template" id="video-template">
+        <iframe src="https://www.youtube.com/embed/abc123"></iframe>
+        <script src="https://cdn.example-unlisted.org/inner.js"></script>
+    </script>
+    <script type="text/template"><iframe src="https://player.vimeo.com/video/1"></iframe></script>
+</body>
+</html>
