@@ -7,20 +7,26 @@ use craft\base\FsInterface;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\events\TemplateEvent;
+use craft\helpers\Db;
+use craft\helpers\StringHelper;
 use craft\log\MonologTarget;
 use craft\models\Site;
+use craft\services\Gc;
 use craft\web\Request as WebRequest;
 use craft\web\Response as WebResponse;
 use craft\web\View;
+use DateTimeImmutable;
 use Psr\Log\LogLevel;
 use Throwable;
 use webdna\cookiebotembeds\models\Settings;
 use webdna\cookiebotembeds\models\SiteConfig;
+use webdna\cookiebotembeds\records\Sighting;
 use webdna\cookiebotembeds\services\Classifier;
 use webdna\cookiebotembeds\services\Config;
 use webdna\cookiebotembeds\services\Log;
 use webdna\cookiebotembeds\services\PageFilter;
 use webdna\cookiebotembeds\services\Placeholder;
+use webdna\cookiebotembeds\services\Report;
 use webdna\cookiebotembeds\services\Rewriter;
 use webdna\cookiebotembeds\services\Vendors;
 use yii\base\Event;
@@ -61,6 +67,11 @@ class CookiebotEmbeds extends Plugin
 
     private ?Log $log = null;
 
+    private ?Report $report = null;
+
+    /** The report throttle's generation, read from the cache once per request */
+    private ?string $reportGeneration = null;
+
     public function init(): void
     {
         parent::init();
@@ -74,6 +85,12 @@ class CookiebotEmbeds extends Plugin
             'logContext' => false,
             'allowLineBreaks' => false,
         ]);
+
+        // BR-26: garbage collection runs from web requests and from `craft gc`, so this is
+        // registered before the console return below.
+        Event::on(Gc::class, Gc::EVENT_RUN, function(): void {
+            $this->pruneReport();
+        });
 
         // BR-1: console requests render no pages for visitors.
         if (Craft::$app->getRequest()->getIsConsoleRequest()) {
@@ -142,7 +159,84 @@ class CookiebotEmbeds extends Plugin
         } catch (Throwable $e) {
             $this->logError('Unknown hosts could not be logged: ' . $e->getMessage());
         }
+
+        // BR-23, BR-24: recording never costs the page its rewrite either. The path is the only
+        // part of the request read, and only for the report's example page.
+        if ($config->report) {
+            try {
+                $this->getReport()->record($result, (int) $site->id, $request->getFullPath());
+            } catch (Throwable $e) {
+                $this->logError('The report could not be recorded: ' . $e->getMessage());
+            }
+        }
         return $result->html;
+    }
+
+    /**
+     * The report recorder (BR-23, BR-24): each row claimed for an hour through Craft's cache,
+     * written in one upsert, failures logged through the throttled log.
+     */
+    public function getReport(): Report
+    {
+        return $this->report ??= new Report(
+            claim: fn(string $key, int $ttl): bool => Craft::$app->getCache()->add(
+                self::LOG_CATEGORY . ':report:' . $this->reportGeneration() . ':' . md5($key),
+                1,
+                $ttl,
+            ),
+            upsert: fn(array $rows) => $this->upsertSightings($rows),
+            onError: fn(string $message) => $this->logError($message),
+        );
+    }
+
+    /**
+     * The throttle's generation (see Report::GENERATION_KEY); `0` until the report is first cleared.
+     */
+    private function reportGeneration(): string
+    {
+        if ($this->reportGeneration === null) {
+            $generation = Craft::$app->getCache()->get(Report::GENERATION_KEY);
+            $this->reportGeneration = is_scalar($generation) ? (string) $generation : '0';
+        }
+        return $this->reportGeneration;
+    }
+
+    /**
+     * One multi-row upsert. Yii's `upsert()` takes a single row, so this is its batch insert plus
+     * the driver's conflict clause. The SQL is set raw: the batch insert has already quoted its
+     * values inline, and `quoteSql()` over them would rewrite any `{{ }}` or `[[ ]]` in a stored path.
+     *
+     * @param non-empty-list<array{siteId: int, host: string, vendor: string|null, category: string, action: string, kind: string, examplePath: string}> $rows
+     */
+    private function upsertSightings(array $rows): void
+    {
+        $db = Craft::$app->getDb();
+        $now = Db::prepareDateForDb(new DateTimeImmutable());
+        $columns = [...array_keys($rows[0]), 'hits', 'dateCreated', 'dateUpdated', 'uid'];
+        $values = array_map(
+            fn(array $row): array => [...array_values($row), 1, $now, $now, StringHelper::UUID()],
+            $rows,
+        );
+
+        $params = [];
+        $table = $db->getSchema()->getRawTableName(Sighting::TABLE);
+        $sql = $db->getQueryBuilder()->batchInsert($table, $columns, $values, $params)
+            . $db->quoteSql(Report::onConflictSql($db->getIsMysql()));
+        $db->createCommand()->setRawSql($sql)->bindValues($params)->execute();
+    }
+
+    /**
+     * BR-26: deletes rows not seen for 30 days. Run by Craft's garbage collection; never throws.
+     */
+    private function pruneReport(): void
+    {
+        try {
+            Db::delete(Sighting::TABLE, [
+                '<', 'dateUpdated', Db::prepareDateForDb(Report::pruneBefore(new DateTimeImmutable())),
+            ]);
+        } catch (Throwable $e) {
+            $this->logError('Old report rows could not be pruned: ' . $e->getMessage());
+        }
     }
 
     /**

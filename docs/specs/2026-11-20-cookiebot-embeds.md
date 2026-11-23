@@ -703,9 +703,31 @@ it is ticked.
       cascading foreign key to `sites`, a row written through `row()` and the record read back
       normalised, a duplicate was refused by the unique key, and uninstall dropped the table.
       TS-7 itself needs the utility, so it is proved in 4.3.*
-- [ ] **4.2 Recorder** - `src/services/Report.php` (batched upsert, cache throttle, failures
+- [x] **4.2 Recorder** - `src/services/Report.php` (batched upsert, cache throttle, failures
       swallowed, GC hook)
       Rules: BR-23, BR-24, BR-26 - Verify: TN-11, TN-12
+      *Done 2026-11-23, with `src/services/Report.php` (pure: the claim, the upsert and the error
+      reporter are injected) and, in `CookiebotEmbeds`, `getReport()`, the live upsert and the
+      prune. `ReportTest` covers TN-11, TN-12 and TN-18 with a fake cache and clock. Decisions:
+      every sighting is recorded, whatever its action; each row is claimed for an hour with the
+      cache's `add()` under a key of site, host, action and kind, and only the claimed rows of a
+      page go in its one upsert, so `hits` counts the hours a row was seen, not page views. A cache
+      that throws writes nothing (logged), because without the throttle every view would write. A
+      failed upsert keeps its claims, so a missing table is tried and logged once an hour. Rows
+      that become one once cut to fit are merged before the upsert (Postgres refuses a row twice in
+      one statement). Yii's `upsert()` takes one row, so the live writer is its `batchInsert()` plus
+      `Report::onConflictSql()` (`ON DUPLICATE KEY UPDATE` with `VALUES()`, which MariaDB also
+      accepts, or `ON CONFLICT ... DO UPDATE`), set with `setRawSql()` because the batch insert
+      inlines its values and `quoteSql()` would rewrite a `{{ }}` or `[[ ]]` in a stored path. The
+      claim keys carry a generation read from the cache (`Report::GENERATION_KEY`): a cache
+      dependency cannot free them, because `add()` ignores dependencies, so 4.3's clear changes the
+      generation instead. The example path is `getFullPath()`, the only part of the request the
+      plugin reads besides its type. Pruning hangs off `Gc::EVENT_RUN`, registered before the
+      console return so `craft gc` prunes too. Smoke-tested on MySQL in the local Craft 5 site:
+      the first view wrote 3 rows, two more views wrote nothing, a data-cache clear let the next view
+      add a hit (uid and `dateCreated` kept); with the table dropped, pages were served rewritten
+      and one error line was logged for two views; `craft gc` deleted the row last seen 31 days ago
+      and kept the two seen yesterday. The Postgres clause is unit-tested only.*
 - [ ] **4.3 Utility and clear** - `src/utilities/Report.php`, `src/templates/_utility.twig`,
       `src/controllers/ReportController.php`
       Rules: BR-25 - Verify: TS-7, TN-15
