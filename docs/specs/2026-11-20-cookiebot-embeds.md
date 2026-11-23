@@ -559,8 +559,22 @@ it is ticked.
       local `.github/forbidden-names.txt`** (B5 #5 exits 2 without it). Each hygiene step was run
       locally under `bash -e` in every branch (secret missing on push and on a fork, clean list,
       blank lines, a hit, a removed disclaimer); the workflow itself is unproved until GitHub runs it.*
-- [ ] **2.1 Classifier** - `src/services/Classifier.php`
+- [x] **2.1 Classifier** - `src/services/Classifier.php`
       Rules: BR-6, BR-7, BR-8, BR-9 - Verify: B5 #4, TN-8, TN-9
+      *Done 2026-11-23, with `src/models/Classification.php` (host, vendor, category, and `source`:
+      which BR-6 step decided). `new Classifier(SiteConfig, Vendors, siteHosts, filesystemHosts)`,
+      then `classify(url)`, memoised per URL. Decisions: Cookiebot and Tag Manager are checked after
+      `allow` but before the site's `vendors`, so no override gates them (B3). A site host loses a
+      leading `www.`, so the apex and every subdomain of it are first-party; filesystem hosts match
+      exactly, because a shared storage host must not make every bucket first-party. `allow`
+      entries match `host + path` as a substring, like provider matches, so one path can be allowed;
+      an allowed listed provider keeps its name for the report. URLs are entity-decoded and `\` is
+      read as `/` (as browsers do), so `https:\\evil.net` and `https:&#x2F;&#x2F;evil.net` are
+      evil.net; user info is not the host. Non-http schemes and an http URL with no host load
+      nothing from elsewhere and count as first-party. BR-8 and the BR-9 `id` rule are tag-level,
+      so they are static helpers (`isAlreadyMarked(tag, attributes)`, `isInfraById(attributes)`,
+      attribute names lower-case, null for a bare attribute) that 2.2's parser calls. BR-11's
+      inline-body scan is 2.2's.*
 - [ ] **2.2 Tag scanner and rewriter** - `src/services/Rewriter.php`, fixtures `iframes`,
       `scripts-external`, `scripts-inline`, `fingerprint`, `already-marked`, `infra`,
       `non-js-types`, `alpine-attributes`, `malformed`, `widget-body`
