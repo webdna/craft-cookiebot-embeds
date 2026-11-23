@@ -686,8 +686,23 @@ it is ticked.
       logging failure never costs the page its rewrite. Smoke-tested in the local Craft 5 site:
       three requests to a page with an unknown host wrote one `[cookiebot-embeds.INFO]` line to the
       plugin's own file, and clearing the data cache let the next request write it again.*
-- [ ] **4.1 Table** - `src/migrations/Install.php`, `src/records/Sighting.php`
+- [x] **4.1 Table** - `src/migrations/Install.php`, `src/records/Sighting.php`
       Rules: BR-23 - Verify: B5 #4 (record mapping), TS-7
+      *Done 2026-11-23. `Sighting` owns the table name (`Sighting::TABLE`), the column lengths,
+      `UNIQUE_KEY`, and the allowed `ACTIONS`, `KINDS` and `CATEGORIES` (taken from
+      `RewriteResult` and `Config::ENTRY_CATEGORIES`, so they cannot drift); the migration builds
+      from those constants. Static `Sighting::row(siteId, sighting, path)` is the pure mapping 4.2
+      upserts: host lower-cased, an empty vendor stored as null, the path given a leading slash
+      with any query string or fragment dropped, and every string cut by characters to fit its
+      column. `hits` and the dates are left to the recorder. Decisions: `host` is NOT NULL with
+      default `''`, because an inline script known only by a fingerprint has no host but still
+      needs a row under the unique key; `hits` is unsigned, default 0; an extra index on
+      `dateUpdated` serves the 30-day prune (BR-26); index and key names are Craft-generated, and
+      go with the prefixed table on uninstall. `SightingTest` covers the mapping. Smoke-tested in
+      the local Craft 5 site (MySQL): install created the table with the unique key and the
+      cascading foreign key to `sites`, a row written through `row()` and the record read back
+      normalised, a duplicate was refused by the unique key, and uninstall dropped the table.
+      TS-7 itself needs the utility, so it is proved in 4.3.*
 - [ ] **4.2 Recorder** - `src/services/Report.php` (batched upsert, cache throttle, failures
       swallowed, GC hook)
       Rules: BR-23, BR-24, BR-26 - Verify: TN-11, TN-12
