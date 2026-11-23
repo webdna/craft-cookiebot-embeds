@@ -1,0 +1,84 @@
+{
+    "name": "webdna/craft-cookiebot-embeds",
+    "description": "Third-party videos, maps, widgets and tracking scripts wait for the visitor's Cookiebot consent, without marking each one up by hand",
+    "type": "craft-plugin",
+    "keywords": [
+        "craft",
+        "cms",
+        "craftcms",
+        "craft-plugin",
+        "cookiebot",
+        "cookie consent",
+        "gdpr"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "webdna",
+            "homepage": "https://webdna.co.uk"
+        }
+    ],
+    "support": {
+        "docs": "https://github.com/webdna/craft-cookiebot-embeds/blob/main/README.md",
+        "issues": "https://github.com/webdna/craft-cookiebot-embeds/issues",
+        "source": "https://github.com/webdna/craft-cookiebot-embeds"
+    },
+    "require": {
+        "craftcms/cms": "^5.0",
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "craftcms/ecs": "dev-main",
+        "craftcms/phpstan": "dev-main",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^10.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "webdna\\cookiebotembeds\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "webdna\\cookiebotembeds\\tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "check": [
+            "@cs",
+            "@analyse",
+            "@test"
+        ],
+        "cs": "ecs check --ansi",
+        "cs-fix": "ecs check --ansi --fix",
+        "analyse": "phpstan analyse --memory-limit=1G --no-progress",
+        "test": "phpunit"
+    },
+    "extra": {
+        "name": "Cookiebot Embeds",
+        "handle": "cookiebot-embeds",
+        "developer": "webdna",
+        "developerUrl": "https://webdna.co.uk",
+        "documentationUrl": "https://github.com/webdna/craft-cookiebot-embeds/blob/main/README.md",
+        "changelogUrl": "https://raw.githubusercontent.com/webdna/craft-cookiebot-embeds/main/CHANGELOG.md",
+        "hasCpSettings": false,
+        "hasCpSection": false,
+        "class": "webdna\\cookiebotembeds\\CookiebotEmbeds",
+        "branch-alias": {
+            "dev-main": "1.0.x-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.2"
+        },
+        "allow-plugins": {
+            "craftcms/plugin-installer": true,
+            "php-http/discovery": false,
+            "yiisoft/yii2-composer": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

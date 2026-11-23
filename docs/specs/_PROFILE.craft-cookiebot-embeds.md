@@ -25,16 +25,21 @@ container, portal or site ID.
 
 ## 2. Commands
 
-Run from the repo root on the host (no DDEV; the plugin has no database of its own to test against).
+Always run through DDEV, never host PHP or Composer (Sam, 23 Nov 2026). The repo carries its own
+`.ddev/config.yaml`: project `cookiebot-embeds`, type `php`, PHP 8.2, no database container (the
+plugin has no database of its own to test against). `ddev start` once, then:
 
 | Purpose | Command |
 |---|---|
-| Install | `composer install` |
-| Code style | `composer cs` (fix: `composer cs-fix`) |
-| Static analysis | `composer analyse` |
-| Unit tests | `composer test` |
-| Everything CI runs | `composer check` (cs + analyse + test) |
-| Validate package | `composer validate --strict --no-plugins` |
+| Install | `ddev composer install` |
+| Code style | `ddev composer cs` (fix: `ddev composer cs-fix`) |
+| Static analysis | `ddev composer analyse` |
+| Unit tests | `ddev composer test` |
+| Everything CI runs | `ddev composer check` (cs + analyse + test) |
+| Validate package | `ddev composer validate --strict --no-plugins` |
+
+CI runs the same `composer` scripts directly on the runner's PHP. The V1-V4 rows below name the
+bare script; prefix `ddev` locally.
 
 Testing inside a real site: add the repo as a Composer `path` repository in that site's
 `composer.json`, `ddev composer require webdna/craft-cookiebot-embeds:@dev`, then

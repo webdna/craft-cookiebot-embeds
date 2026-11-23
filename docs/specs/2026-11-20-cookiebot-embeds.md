@@ -513,10 +513,12 @@ it is ticked.
       Rules: BR-13, BR-19, BR-20 - Verify: spike notes in the change log
       *Done 2026-11-22 with the local page and a read of `uc.js`; site B confirmation carried by
       TS-6 (see spike notes).*
-- [ ] **1.1 Package scaffold** - `composer.json`, `src/CookiebotEmbeds.php`, `src/icon.svg`,
+- [x] **1.1 Package scaffold** - `composer.json`, `src/CookiebotEmbeds.php`, `src/icon.svg`,
       `src/icon-mask.svg`, `README.md`, `LICENSE.md`, `CHANGELOG.md`, `ecs.php`, `phpstan.neon`,
       `phpunit.xml.dist`, `tests/bootstrap.php`, `.gitattributes`
       Rules: BR-31 - Verify: B5 #1-#3
+      *Done 2026-11-23. Also `.gitignore` and `.ddev/config.yaml`: B5 runs through DDEV (profile
+      section 2). The README carries both BR-31 disclaimers now; 6.1 adds the rest.*
 - [ ] **1.2 Settings and config** - `src/models/Settings.php`, `src/config.php`,
       `src/services/Config.php` (normalisation, multi-site keys)
       Rules: BR-2, BR-27 - Verify: B5 #4, TN-10
