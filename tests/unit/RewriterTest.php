@@ -56,7 +56,7 @@ final class RewriterTest extends TestCase
     public static function fixtures(): array
     {
         $names = ['iframes', 'scripts-external', 'scripts-inline', 'fingerprint', 'already-marked', 'infra',
-            'non-js-types', 'alpine-attributes', 'malformed', 'widget-body', ];
+            'non-js-types', 'alpine-attributes', 'malformed', 'widget-body', 'benchmark', ];
         return array_combine($names, array_map(fn(string $name): array => [$name], $names));
     }
 
