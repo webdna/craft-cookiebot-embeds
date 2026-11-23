@@ -1,0 +1,82 @@
+{# The report utility (AC-7, BR-25). Craft's own CP classes only; every label is translatable. #}
+{% import '_includes/forms' as forms %}
+
+<div class="flex flex-nowrap" style="justify-content: space-between; align-items: center; margin-bottom: 14px;">
+    {% if multiSite %}
+        <form method="get" action="{{ cpUrl('utilities/cookiebot-embeds') }}" class="flex">
+            {{ forms.select({
+                name: 'site',
+                value: selectedSite,
+                options: [{ label: 'All sites'|t('cookiebot-embeds'), value: '' }]|merge(
+                    sites|map(site => { label: site.name, value: site.handle })
+                ),
+            }) }}
+            <button type="submit" class="btn">{{ 'Filter'|t('cookiebot-embeds') }}</button>
+        </form>
+    {% else %}
+        <div></div>
+    {% endif %}
+
+    {% if rows %}
+        <form method="post" action="" data-cbe-report-clear>
+            {{ actionInput('cookiebot-embeds/report/clear') }}
+            {{ csrfInput() }}
+            <button type="submit" class="btn submit">{{ 'Clear report'|t('cookiebot-embeds') }}</button>
+        </form>
+    {% endif %}
+</div>
+
+{% if not rows %}
+    <p class="zilch" data-cbe-report-empty>
+        {{ "No third-party embeds seen yet. Browse the site's pages and they will appear here."|t('cookiebot-embeds') }}
+    </p>
+{% else %}
+    <div class="tableview tablepane">
+        <table class="data fullwidth" data-cbe-report>
+            <thead>
+                <tr>
+                    {% if multiSite %}<th scope="col">{{ 'Site'|t('cookiebot-embeds') }}</th>{% endif %}
+                    <th scope="col">{{ 'Host'|t('cookiebot-embeds') }}</th>
+                    <th scope="col">{{ 'Provider'|t('cookiebot-embeds') }}</th>
+                    <th scope="col">{{ 'Category'|t('cookiebot-embeds') }}</th>
+                    <th scope="col">{{ 'Action'|t('cookiebot-embeds') }}</th>
+                    <th scope="col">{{ 'Kind'|t('cookiebot-embeds') }}</th>
+                    <th scope="col">{{ 'Example page'|t('cookiebot-embeds') }}</th>
+                    <th scope="col">{{ 'Hits'|t('cookiebot-embeds') }}</th>
+                    <th scope="col">{{ 'Last seen'|t('cookiebot-embeds') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr data-cbe-row="{{ row.action }} {{ row.kind }} {{ row.host }}">
+                        {% if multiSite %}<td>{{ row.site }}</td>{% endif %}
+                        <td>
+                            <span class="code">{{ row.host ?: '(inline script)'|t('cookiebot-embeds') }}</span>
+                            {% if row.unknown %}
+                                <div class="smalltext light" style="margin-top: 4px;">
+                                    {{ 'To allow it or name it, add one of these to config/cookiebot-embeds.php:'|t('cookiebot-embeds') }}
+                                    {% for line in row.configLines %}
+                                        <div><code>{{ line }}</code></div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td>{{ row.vendor ?? (row.unknown ? 'Unknown'|t('cookiebot-embeds') : '') }}</td>
+                        <td>{{ row.category|t('cookiebot-embeds') }}</td>
+                        <td>{{ row.action|t('cookiebot-embeds') }}</td>
+                        <td>{{ row.kind|t('cookiebot-embeds') }}</td>
+                        <td>
+                            {% if row.url %}
+                                <a href="{{ row.url }}" target="_blank" rel="noopener">{{ row.examplePath }}</a>
+                            {% else %}
+                                {{ row.examplePath }}
+                            {% endif %}
+                        </td>
+                        <td>{{ row.hits|number }}</td>
+                        <td class="nowrap">{{ row.lastSeen|timestamp('short') }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}

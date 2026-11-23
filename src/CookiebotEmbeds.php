@@ -6,12 +6,14 @@ use Craft;
 use craft\base\FsInterface;
 use craft\base\Model;
 use craft\base\Plugin;
+use craft\events\RegisterComponentTypesEvent;
 use craft\events\TemplateEvent;
 use craft\helpers\Db;
 use craft\helpers\StringHelper;
 use craft\log\MonologTarget;
 use craft\models\Site;
 use craft\services\Gc;
+use craft\services\Utilities;
 use craft\web\Request as WebRequest;
 use craft\web\Response as WebResponse;
 use craft\web\View;
@@ -29,6 +31,7 @@ use webdna\cookiebotembeds\services\Placeholder;
 use webdna\cookiebotembeds\services\Report;
 use webdna\cookiebotembeds\services\Rewriter;
 use webdna\cookiebotembeds\services\Vendors;
+use webdna\cookiebotembeds\utilities\Report as ReportUtility;
 use yii\base\Event;
 
 /**
@@ -90,6 +93,11 @@ class CookiebotEmbeds extends Plugin
         // registered before the console return below.
         Event::on(Gc::class, Gc::EVENT_RUN, function(): void {
             $this->pruneReport();
+        });
+
+        // BR-25: the report, behind Craft's per-utility permission (admins by default).
+        Event::on(Utilities::class, Utilities::EVENT_REGISTER_UTILITIES, function(RegisterComponentTypesEvent $event): void {
+            $event->types[] = ReportUtility::class;
         });
 
         // BR-1: console requests render no pages for visitors.

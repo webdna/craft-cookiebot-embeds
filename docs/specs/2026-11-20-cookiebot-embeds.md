@@ -728,9 +728,25 @@ it is ticked.
       add a hit (uid and `dateCreated` kept); with the table dropped, pages were served rewritten
       and one error line was logged for two views; `craft gc` deleted the row last seen 31 days ago
       and kept the two seen yesterday. The Postgres clause is unit-tested only.*
-- [ ] **4.3 Utility and clear** - `src/utilities/Report.php`, `src/templates/_utility.twig`,
+- [x] **4.3 Utility and clear** - `src/utilities/Report.php`, `src/templates/_utility.twig`,
       `src/controllers/ReportController.php`
       Rules: BR-25 - Verify: TS-7, TN-15
+      *Done 2026-11-23. The utility (id `cookiebot-embeds`, so `admin/utilities/cookiebot-embeds`)
+      is registered in `init()` and shown by Craft's own utilities page, which enforces the
+      `utility:cookiebot-embeds` permission. Static `Report::present()` (pure, `ReportUtilityTest`)
+      turns rows into the table: site name, example link (site base URL plus path), hits, last seen
+      (stored UTC, shown in the system time zone), and for an unknown host the two config lines that
+      allow or name it (`configLines()`). "Unknown" is `Log::isUnknown()`, now shared by the log and
+      the report so they cannot disagree. The site filter is a GET form, shown only on multi-site
+      installs. `ReportController::actionClear` sits behind Craft's `UtilityAccess` filter (403) and
+      Craft's CSRF validation (400), deletes every row and writes a new
+      `Report::GENERATION_KEY`, so the next page views record at once instead of an hour later.
+      Labels, actions, kinds and the empty state are in the `cookiebot-embeds` translation file.
+      Smoke-tested over HTTP in the local Craft 5 site (switched to Pro, because Solo allows one
+      user): TS-7 steps 1 to 3 pass (empty state, four rows with the unknown host's config line and
+      example links, clear back to empty), browsing after a clear records again at once; TN-15: a
+      clear without CSRF is 400, a non-admin with CP access gets 403 for the utility and for the
+      clear, and the rows survive. Not seen in a browser yet; TS-7 on site A is in 6.1.*
 - [ ] **5.1 Vue mode** - `src/web/assets/activator/activator.js`, asset bundle, rewriter mode switch,
       `vue-mode` fixture
       Rules: BR-19 (or BR-20) - Verify: TS-6, TN-16

@@ -93,10 +93,21 @@ final class Log
     {
         $unknown = [];
         foreach ($result->sightings as $sighting) {
-            if ($sighting['host'] !== '' && $sighting['vendor'] === null && $sighting['action'] !== RewriteResult::ACTION_ALLOWED) {
+            if (self::isUnknown($sighting)) {
                 $unknown[$sighting['host']][] = $sighting;
             }
         }
         return $unknown;
+    }
+
+    /**
+     * Whether a sighting, or a report row, is of a host listed nowhere. Shared with the report, so
+     * the log and the report never disagree about what is unknown.
+     *
+     * @param array{host: string, vendor: string|null, action: string} $sighting
+     */
+    public static function isUnknown(array $sighting): bool
+    {
+        return $sighting['host'] !== '' && $sighting['vendor'] === null && $sighting['action'] !== RewriteResult::ACTION_ALLOWED;
     }
 }
