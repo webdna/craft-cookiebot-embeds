@@ -53,7 +53,7 @@ class Report extends Utility
         if ($selected !== null) {
             $query->where(['siteId' => $selected->id]);
         }
-        /** @var list<array{siteId: int|string, host: string, vendor: string|null, category: string, action: string, kind: string, examplePath: string, hits: int|string, dateUpdated: string}> $rows */
+        /** @var list<array{siteId: int|string, host: string, vendor: string|null, category: string, action: string, kind: string, examplePath: string, dateUpdated: string}> $rows */
         $rows = $query->all();
 
         return Craft::$app->getView()->renderTemplate('cookiebot-embeds/_utility', [
@@ -68,10 +68,10 @@ class Report extends Utility
      * The table's rows: each database row with its site's name, a link to its example page and,
      * for a host listed nowhere, the config lines that would allow or name it. Pure.
      *
-     * @param list<array{siteId: int|string, host: string, vendor: string|null, category: string, action: string, kind: string, examplePath: string, hits: int|string, dateUpdated: string}> $rows
+     * @param list<array{siteId: int|string, host: string, vendor: string|null, category: string, action: string, kind: string, examplePath: string, dateUpdated: string}> $rows
      * @param array<int, string> $siteNames Site ID => name
      * @param array<int, string|null> $siteUrls Site ID => base URL
-     * @return list<array{site: string, host: string, vendor: string|null, category: string, action: string, kind: string, examplePath: string, url: string|null, hits: int, lastSeen: DateTime, unknown: bool, configLines: list<string>}>
+     * @return list<array{site: string, host: string, vendor: string|null, category: string, action: string, kind: string, examplePath: string, url: string|null, lastSeen: DateTime, unknown: bool, configLines: list<string>}>
      */
     public static function present(array $rows, array $siteNames, array $siteUrls): array
     {
@@ -90,7 +90,6 @@ class Report extends Utility
                 'kind' => $row['kind'],
                 'examplePath' => $row['examplePath'],
                 'url' => $baseUrl === null || $baseUrl === '' ? null : rtrim($baseUrl, '/') . $row['examplePath'],
-                'hits' => (int) $row['hits'],
                 // Stored in UTC; the template's date filter shows it in the system time zone.
                 'lastSeen' => new DateTime($row['dateUpdated'], new DateTimeZone('UTC')),
                 'unknown' => $unknown,

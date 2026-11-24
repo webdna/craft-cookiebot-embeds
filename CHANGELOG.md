@@ -15,5 +15,5 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Vue mode (`mode` = `vue`): gated content is released by the plugin's own activator script once the site calls `window.CookiebotEmbeds.ready()` from its root Vue instance and Cookiebot has reported consent, so released widgets keep their listeners.
 - Banner option (`injectCookiebot`, `cbid`, `cookiebotDomain`) that adds Cookiebot's `uc.js` to the top of every page's head, for sites that do not load Cookiebot through Google Tag Manager.
 - The `cookiebotSettingsLink()` Twig function, a link that reopens the Cookiebot banner.
-- The Cookiebot Embeds report under Utilities: every third party seen, with category, action, example page, hours seen and last seen, the config line for unknown hosts, and a clear button. Rows are throttled to one write per hour each and pruned after 30 days by garbage collection.
+- The Cookiebot Embeds report under Utilities: every third party seen, with category, action, example page and last seen, the config line for unknown hosts, and a clear button. Rows are throttled to one write per hour each and pruned after 30 days by garbage collection.
 - The plugin's own log file, `storage/logs/cookiebot-embeds-<date>.log`, with each unknown host once an hour per site. Any failure inside the plugin is logged and the page is served unchanged.

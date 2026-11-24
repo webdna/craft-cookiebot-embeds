@@ -32,7 +32,6 @@ return [
     'Action' => 'Action',
     'Kind' => 'Kind',
     'Example page' => 'Example page',
-    'Hours seen' => 'Hours seen',
     'Last seen' => 'Last seen',
     '(inline script)' => '(inline script)',
     'Unknown' => 'Unknown',

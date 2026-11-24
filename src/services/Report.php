@@ -126,13 +126,10 @@ final class Report
         if ($mysql) {
             // VALUES() rather than a row alias, which MariaDB does not support.
             $set = array_map(fn(string $c): string => "[[$c]] = VALUES([[$c]])", $updated);
-            $set[] = '[[hits]] = [[hits]] + 1';
             return ' ON DUPLICATE KEY UPDATE ' . implode(', ', $set);
         }
 
         $set = array_map(fn(string $c): string => "[[$c]] = EXCLUDED.[[$c]]", $updated);
-        // Unqualified, `hits` would be ambiguous between the table and EXCLUDED.
-        $set[] = '[[hits]] = ' . Sighting::TABLE . '.[[hits]] + 1';
         $key = implode(', ', array_map(fn(string $c): string => "[[$c]]", Sighting::UNIQUE_KEY));
         return " ON CONFLICT ($key) DO UPDATE SET " . implode(', ', $set);
     }

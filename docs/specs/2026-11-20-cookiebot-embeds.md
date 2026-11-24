@@ -169,7 +169,6 @@ appear here." until the first page is served.
 | `action` | string(20) | `gated`, `left`, `allowed`, `already` (already marked up), `skipped` (e.g. module script) |
 | `kind` | string(10) | `script`, `inline`, `iframe` |
 | `examplePath` | string(255) | Path of the most recent page it was seen on, no query string |
-| `hits` | int | Hours in which the row was recorded (BR-23's throttle allows one write an hour), not page views; shown as "Hours seen" |
 | `dateCreated`, `dateUpdated`, `uid` | standard | `dateUpdated` is "last seen" |
 
 Unique key: `siteId, host, action, kind`.
@@ -254,7 +253,7 @@ Vue instance's `mounted()` hook. Idempotent.
 
 | Surface | New or reuse | Notes |
 |---|---|---|
-| Report utility | New, Craft's native utility layout and admin table | Columns: site, host, provider, category, action, kind, example page (link), hours seen, last seen. Filter by site. Each unknown row shows the config line to allow or classify it. Clear button. Empty state per section 3. |
+| Report utility | New, Craft's native utility layout and admin table | Columns: site, host, provider, category, action, kind, example page (link), last seen. Filter by site. Each unknown row shows the config line to allow or classify it. Clear button. Empty state per section 3. |
 | Placeholder | New, plugin template | Message plus "change cookie settings" link; sized from the iframe's width and height attributes via data attributes only |
 
 **Design source.** None: the report reuses Craft's own CP components; the placeholder is unstyled by
@@ -694,9 +693,9 @@ it is ticked.
       from those constants. Static `Sighting::row(siteId, sighting, path)` is the pure mapping 4.2
       upserts: host lower-cased, an empty vendor stored as null, the path given a leading slash
       with any query string or fragment dropped, and every string cut by characters to fit its
-      column. `hits` and the dates are left to the recorder. Decisions: `host` is NOT NULL with
+      column. The dates are left to the recorder. Decisions: `host` is NOT NULL with
       default `''`, because an inline script known only by a fingerprint has no host but still
-      needs a row under the unique key; `hits` is unsigned, default 0; an extra index on
+      needs a row under the unique key; an extra index on
       `dateUpdated` serves the 30-day prune (BR-26); index and key names are Craft-generated, and
       go with the prefixed table on uninstall. `SightingTest` covers the mapping. Smoke-tested in
       the local Craft 5 site (MySQL): install created the table with the unique key and the
@@ -711,7 +710,7 @@ it is ticked.
       prune. `ReportTest` covers TN-11, TN-12 and TN-18 with a fake cache and clock. Decisions:
       every sighting is recorded, whatever its action; each row is claimed for an hour with the
       cache's `add()` under a key of site, host, action and kind, and only the claimed rows of a
-      page go in its one upsert, so `hits` counts the hours a row was seen, not page views. A cache
+      page go in its one upsert (a `hits` count was dropped on 2026-11-24: it counted hours, not views). A cache
       that throws writes nothing (logged), because without the throttle every view would write. A
       failed upsert keeps its claims, so a missing table is tried and logged once an hour. Rows
       that become one once cut to fit are merged before the upsert (Postgres refuses a row twice in
@@ -734,7 +733,7 @@ it is ticked.
       *Done 2026-11-23. The utility (id `cookiebot-embeds`, so `admin/utilities/cookiebot-embeds`)
       is registered in `init()` and shown by Craft's own utilities page, which enforces the
       `utility:cookiebot-embeds` permission. Static `Report::present()` (pure, `ReportUtilityTest`)
-      turns rows into the table: site name, example link (site base URL plus path), hits, last seen
+      turns rows into the table: site name, example link (site base URL plus path), last seen
       (stored UTC, shown in the system time zone), and for an unknown host the two config lines that
       allow or name it (`configLines()`). "Unknown" is `Log::isUnknown()`, now shared by the log and
       the report so they cannot disagree. The site filter is a GET form, shown only on multi-site

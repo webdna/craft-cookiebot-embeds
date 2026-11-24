@@ -29,7 +29,6 @@ class Install extends Migration
             'action' => $this->string(Sighting::ACTION_LENGTH)->notNull(),
             'kind' => $this->string(Sighting::KIND_LENGTH)->notNull(),
             'examplePath' => $this->string(Sighting::PATH_LENGTH)->notNull()->defaultValue(''),
-            'hits' => $this->integer()->unsigned()->notNull()->defaultValue(0),
             'dateCreated' => $this->dateTime()->notNull(),
             'dateUpdated' => $this->dateTime()->notNull(),
             'uid' => $this->uid(),

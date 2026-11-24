@@ -19,7 +19,6 @@ use webdna\cookiebotembeds\services\Config;
  * @property string $action One of {@see self::ACTIONS}
  * @property string $kind One of {@see self::KINDS}
  * @property string $examplePath The most recent page it was seen on, no query string
- * @property int $hits
  * @property string $dateCreated
  * @property string $dateUpdated Last seen
  * @property string $uid
@@ -62,7 +61,7 @@ class Sighting extends ActiveRecord
 
     /**
      * Maps one rewriter sighting to the row's identifying and descriptive columns, cut to fit the
-     * table; `hits` and the dates are the recorder's. Pure, so it is tested without a database.
+     * table; the dates are the recorder's. Pure, so it is tested without a database.
      *
      * @param array{host: string, vendor: string|null, category: string, action: string, kind: string} $sighting
      * @param string $path The page's path; a query string or fragment is dropped

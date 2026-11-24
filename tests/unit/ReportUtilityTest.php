@@ -12,7 +12,7 @@ use webdna\cookiebotembeds\utilities\Report;
 final class ReportUtilityTest extends TestCase
 {
     /**
-     * @return array{siteId: string, host: string, vendor: string|null, category: string, action: string, kind: string, examplePath: string, hits: string, dateUpdated: string}
+     * @return array{siteId: string, host: string, vendor: string|null, category: string, action: string, kind: string, examplePath: string, dateUpdated: string}
      */
     private static function row(string $host, ?string $vendor, string $action = 'gated', string $kind = 'script', string $siteId = '1'): array
     {
@@ -24,7 +24,6 @@ final class ReportUtilityTest extends TestCase
             'action' => $action,
             'kind' => $kind,
             'examplePath' => '/news/a-story',
-            'hits' => '3',
             'dateUpdated' => '2026-11-23 10:15:00',
         ];
     }
@@ -40,7 +39,6 @@ final class ReportUtilityTest extends TestCase
         $this->assertSame('Main site', $row['site']);
         $this->assertSame('YouTube', $row['vendor']);
         $this->assertSame('https://www.example.com/news/a-story', $row['url']);
-        $this->assertSame(3, $row['hits']);
         $this->assertSame('2026-11-23T10:15:00+00:00', $row['lastSeen']->format(DATE_ATOM));
         $this->assertFalse($row['unknown']);
         $this->assertSame([], $row['configLines']);

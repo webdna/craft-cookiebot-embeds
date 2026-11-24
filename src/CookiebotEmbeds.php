@@ -289,9 +289,9 @@ class CookiebotEmbeds extends Plugin
     {
         $db = Craft::$app->getDb();
         $now = Db::prepareDateForDb(new DateTimeImmutable());
-        $columns = [...array_keys($rows[0]), 'hits', 'dateCreated', 'dateUpdated', 'uid'];
+        $columns = [...array_keys($rows[0]), 'dateCreated', 'dateUpdated', 'uid'];
         $values = array_map(
-            fn(array $row): array => [...array_values($row), 1, $now, $now, StringHelper::UUID()],
+            fn(array $row): array => [...array_values($row), $now, $now, StringHelper::UUID()],
             $rows,
         );
 

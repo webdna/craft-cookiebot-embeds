@@ -226,11 +226,11 @@ final class ReportTest extends TestCase
         $this->assertGreaterThan($cutoff, $now->modify('-1 day'));
     }
 
-    public function testMysqlConflictClauseUpdatesTheRowAndCountsAHit(): void
+    public function testMysqlConflictClauseUpdatesTheRow(): void
     {
         $this->assertSame(
             ' ON DUPLICATE KEY UPDATE [[vendor]] = VALUES([[vendor]]), [[category]] = VALUES([[category]]), '
-            . '[[examplePath]] = VALUES([[examplePath]]), [[dateUpdated]] = VALUES([[dateUpdated]]), [[hits]] = [[hits]] + 1',
+            . '[[examplePath]] = VALUES([[examplePath]]), [[dateUpdated]] = VALUES([[dateUpdated]])',
             Report::onConflictSql(true),
         );
     }
@@ -240,7 +240,7 @@ final class ReportTest extends TestCase
         $this->assertSame(
             ' ON CONFLICT ([[siteId]], [[host]], [[action]], [[kind]]) DO UPDATE SET [[vendor]] = EXCLUDED.[[vendor]], '
             . '[[category]] = EXCLUDED.[[category]], [[examplePath]] = EXCLUDED.[[examplePath]], '
-            . '[[dateUpdated]] = EXCLUDED.[[dateUpdated]], [[hits]] = {{%cookiebotembeds_sightings}}.[[hits]] + 1',
+            . '[[dateUpdated]] = EXCLUDED.[[dateUpdated]]',
             Report::onConflictSql(false),
         );
     }

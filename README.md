@@ -190,10 +190,9 @@ translatable. The plugin never inserts it by itself.
 ## Report
 
 **Utilities > Cookiebot Embeds** lists every third party the plugin has seen: host, provider,
-category, what it did (gated, left, allowed, already marked up, skipped), an example page, hours
-seen and when it was last seen. "Hours seen" counts the hours in which the row was recorded, not
-page views: a provider on every page shows 1 after an hour of crawling. Unknown hosts come with the config line to allow or classify them. This
-is where a new provider is spotted after it appears on the site.
+category, what it did (gated, left, allowed, already marked up, skipped), an example page and when
+it was last seen. Unknown hosts come with the config line to allow or classify them. This is where
+a new provider is spotted after it appears on the site.
 
 Rows are written at most once an hour each, in one batched query, so busy uncached pages do not
 write to the database on every view. Rows not seen for 30 days are removed by Craft's garbage
