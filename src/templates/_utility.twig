@@ -42,7 +42,8 @@
                     <th scope="col">{{ 'Action'|t('cookiebot-embeds') }}</th>
                     <th scope="col">{{ 'Kind'|t('cookiebot-embeds') }}</th>
                     <th scope="col">{{ 'Example page'|t('cookiebot-embeds') }}</th>
-                    <th scope="col">{{ 'Hits'|t('cookiebot-embeds') }}</th>
+                    {# `hits` counts the throttled writes (BR-23): at most one an hour, not page views. #}
+                    <th scope="col">{{ 'Hours seen'|t('cookiebot-embeds') }}</th>
                     <th scope="col">{{ 'Last seen'|t('cookiebot-embeds') }}</th>
                 </tr>
             </thead>

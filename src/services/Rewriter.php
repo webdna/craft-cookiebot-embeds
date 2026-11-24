@@ -54,6 +54,17 @@ final class Rewriter
     private array $sightings = [];
 
     /**
+     * Gated widget scripts in the body, by the offset of their start tag, waiting to learn whether
+     * they get a placeholder (BR-16).
+     *
+     * @var array<int, array{string, Classification, string}> [provider key, classification, kind]
+     */
+    private array $widgets = [];
+
+    /** @var array<string, true> Provider keys of gated iframes that got a placeholder on this page */
+    private array $iframeProviders = [];
+
+    /**
      * @param Closure(string $category, ?string $vendor, string $kind, ?string $width, ?string $height): string|null $placeholder
      *        Renders the placeholder (BR-17), normally `Placeholder::renderer()`. Null inserts none.
      */
@@ -81,6 +92,8 @@ final class Rewriter
         }
 
         $this->sightings = [];
+        $this->widgets = [];
+        $this->iframeProviders = [];
         /** @var list<array{int, int, string}> $edits [start, end, replacement], ascending */
         $edits = [];
         $length = strlen($html);
@@ -142,7 +155,43 @@ final class Rewriter
             $offset = $closeEnd ?? $tag['end'];
         }
 
-        return new RewriteResult(self::apply($html, $edits), $this->takeSightings());
+        return new RewriteResult(self::apply($html, $this->placeWidgetPlaceholders($edits)), $this->takeSightings());
+    }
+
+    /**
+     * BR-16: a gated widget script in the body gets a placeholder before it, but at most one per
+     * provider per page, and none when a gated iframe from the same provider already has one (a
+     * Vimeo iframe and Vimeo's player script are one embed to the visitor).
+     *
+     * @param list<array{int, int, string}> $edits
+     * @return list<array{int, int, string}>
+     */
+    private function placeWidgetPlaceholders(array $edits): array
+    {
+        $placed = $this->iframeProviders;
+        foreach ($edits as $i => [$start, $end, $replacement]) {
+            // An iframe's placeholder is an insertion ($end === $start) and may sit at a script's start.
+            if ($end === $start || !isset($this->widgets[$start])) {
+                continue;
+            }
+            [$provider, $found, $kind] = $this->widgets[$start];
+            if (isset($placed[$provider])) {
+                continue;
+            }
+            $placed[$provider] = true;
+            $edits[$i][2] = $this->renderPlaceholder($found, $kind, null, null) . $replacement;
+        }
+        $this->widgets = [];
+        return $edits;
+    }
+
+    /**
+     * What makes two gated elements the same provider for BR-16: the vendor's name when known,
+     * otherwise the host.
+     */
+    private static function providerKey(Classification $found): string
+    {
+        return $found->vendor !== null && $found->vendor !== '' ? 'v:' . strtolower($found->vendor) : 'h:' . $found->host;
     }
 
     /**
@@ -301,10 +350,13 @@ final class Rewriter
         $edits[] = [$tag['lastAttributeEnd'], $tag['lastAttributeEnd'], $this->consentAttributes($found->category)];
         $rewritten = self::apply(substr($html, 0, $tag['end']), $edits, from: $tag['start']);
 
-        // BR-16: a widget in the body gets its placeholder just before it.
-        $before = $inBody ? $this->renderPlaceholder($found, $kind, null, null) : '';
+        // BR-16: a widget in the body may get a placeholder just before it, decided once the
+        // whole page has been read (placeWidgetPlaceholders()).
+        if ($inBody) {
+            $this->widgets[$tag['start']] = [self::providerKey($found), $found, $kind];
+        }
 
-        return [$tag['start'], $tag['end'], $before . $rewritten];
+        return [$tag['start'], $tag['end'], $rewritten];
     }
 
     /**
@@ -351,6 +403,7 @@ final class Rewriter
             $placeholder = $this->renderPlaceholder($found, RewriteResult::KIND_IFRAME, $attributes['width'] ?? null, $attributes['height'] ?? null);
             if ($placeholder !== '') {
                 $result[] = [$after, $after, $placeholder];
+                $this->iframeProviders[self::providerKey($found)] = true;
             }
         }
         return $result;

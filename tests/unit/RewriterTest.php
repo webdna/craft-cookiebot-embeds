@@ -202,6 +202,66 @@ final class RewriterTest extends TestCase
         );
     }
 
+    /**
+     * BR-16: a provider's iframe and its player script are one embed to the visitor, so only the
+     * iframe's placeholder shows, whichever comes first on the page.
+     */
+    #[DataProvider('iframeAndPlayerScript')]
+    public function testAWidgetScriptFromAnIframesProviderGetsNoPlaceholder(string $html): void
+    {
+        $output = self::rewriter()->rewrite($html)->html;
+
+        self::assertSame(1, substr_count($output, 'data-cbe-placeholder'));
+        self::assertStringContainsString('</iframe><div data-cbe-placeholder class="cookieconsent-optout-marketing">Vimeo|iframe|', $output);
+        self::assertSame(2, substr_count($output, 'data-cookieconsent="marketing"'));
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function iframeAndPlayerScript(): array
+    {
+        $iframe = '<iframe src="https://player.vimeo.com/video/1" width="640" height="360"></iframe>';
+        $script = '<script src="https://player.vimeo.com/api/player.js"></script>';
+        return [
+            'iframe first' => ["<body><p>$iframe</p>$script</body>"],
+            'script first' => ["<body>$script<p>$iframe</p></body>"],
+        ];
+    }
+
+    /**
+     * BR-16: one placeholder per provider for its widget scripts; another provider still gets its own.
+     */
+    public function testWidgetScriptsGetOnePlaceholderPerProvider(): void
+    {
+        $html = '<body>'
+            . '<script src="https://cdn.example-unlisted.org/a.js"></script>'
+            . '<script src="https://cdn.example-unlisted.org/b.js"></script>'
+            . '<script src="https://www.youtube.com/iframe_api"></script>'
+            . '<script src="https://www.youtube.com/iframe_api?v=2"></script>'
+            . '</body>';
+
+        $output = self::rewriter()->rewrite($html)->html;
+
+        self::assertSame(2, substr_count($output, 'data-cbe-placeholder'));
+        self::assertSame(1, substr_count($output, '>unknown|script|-x-</div><script type="text/plain" src="https://cdn.example-unlisted.org/a.js"'));
+        self::assertSame(1, substr_count($output, '>YouTube|script|-x-</div><script type="text/plain" src="https://www.youtube.com/iframe_api"'));
+        self::assertSame(4, substr_count($output, 'type="text/plain"'));
+    }
+
+    /**
+     * Placeholders are per page: the same rewriter on the next page starts again.
+     */
+    public function testProvidersSeenOnOnePageDoNotCarryToTheNext(): void
+    {
+        $rewriter = self::rewriter();
+        $rewriter->rewrite('<body><iframe src="https://player.vimeo.com/video/1"></iframe></body>');
+
+        $output = $rewriter->rewrite('<body><script src="https://player.vimeo.com/api/player.js"></script></body>')->html;
+
+        self::assertStringContainsString('>Vimeo|script|-x-</div><script type="text/plain"', $output);
+    }
+
     public function testWithoutARendererNoPlaceholderIsInserted(): void
     {
         $html = '<iframe src="https://www.youtube.com/embed/a"></iframe>';

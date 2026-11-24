@@ -49,7 +49,7 @@ On site pages with an HTML response (Live Preview included):
 | An external script from a gated provider | `type="text/plain" data-cookieconsent="<category>"`, other attributes untouched |
 | An inline script that loads a gated URL, or matches a fingerprint | The same, with the strictest category it names |
 | An iframe from a gated provider | `src` renamed to `data-cookieblock-src`, plus `data-cookieconsent`, with a placeholder after it |
-| A gated script in the body (a widget) | The same as an external script, with a placeholder before it |
+| A gated script in the body (a widget) | The same as an external script, with a placeholder before it unless that provider already has one on the page |
 
 Left exactly as they are:
 
@@ -190,8 +190,9 @@ translatable. The plugin never inserts it by itself.
 ## Report
 
 **Utilities > Cookiebot Embeds** lists every third party the plugin has seen: host, provider,
-category, what it did (gated, left, allowed, already marked up, skipped), an example page, hit count
-and when it was last seen. Unknown hosts come with the config line to allow or classify them. This
+category, what it did (gated, left, allowed, already marked up, skipped), an example page, hours
+seen and when it was last seen. "Hours seen" counts the hours in which the row was recorded, not
+page views: a provider on every page shows 1 after an hour of crawling. Unknown hosts come with the config line to allow or classify them. This
 is where a new provider is spotted after it appears on the site.
 
 Rows are written at most once an hour each, in one batched query, so busy uncached pages do not

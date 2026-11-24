@@ -169,7 +169,7 @@ appear here." until the first page is served.
 | `action` | string(20) | `gated`, `left`, `allowed`, `already` (already marked up), `skipped` (e.g. module script) |
 | `kind` | string(10) | `script`, `inline`, `iframe` |
 | `examplePath` | string(255) | Path of the most recent page it was seen on, no query string |
-| `hits` | int | Times seen since first recorded |
+| `hits` | int | Hours in which the row was recorded (BR-23's throttle allows one write an hour), not page views; shown as "Hours seen" |
 | `dateCreated`, `dateUpdated`, `uid` | standard | `dateUpdated` is "last seen" |
 
 Unique key: `siteId, host, action, kind`.
@@ -205,7 +205,7 @@ garbage collection. The report's clear button deletes all rows. Uninstall drops 
 | BR-13 | Scripts with `type="module"` are left and recorded as `skipped`. Cookiebot (uc.js 2.146.0) releases a gated script by cloning it and forcing `type="text/javascript"`, so a gated module would run as a classic script and fail with a `SyntaxError` on its first `import` (spike 0.1). |
 | BR-14 | **Fingerprints** are regular expressions matched against inline script bodies, each with a vendor and category; shipped ones live in the provider list, sites can add their own under `fingerprints`. A fingerprint that fails to compile is logged once and ignored, never thrown. |
 | BR-15 | **iframe** with a `src` that classifies as gated: rename `src` to `data-cookieblock-src`, add `data-cookieconsent="<category>"`, and insert the placeholder immediately after the iframe. An iframe with no `src`, an empty `src`, `about:blank`, or `srcdoc` is left. |
-| BR-16 | **Widget script in the body**: a gated external or inline script that appears after `<body` gets the placeholder inserted immediately before it. Scripts in `<head>` get no placeholder. |
+| BR-16 | **Widget script in the body**: a gated external or inline script that appears after `<body` gets the placeholder inserted immediately before it, but at most one per provider (vendor name, or host when unnamed) per page, and none when a gated iframe from the same provider on the page already has one: an iframe and its player script are one embed to the visitor (found on a first real site, 2026-11-24). Scripts in `<head>` get no placeholder. |
 | BR-17 | The **placeholder** is rendered from the plugin's template, or from the site template named in `placeholderTemplate`, with variables `category`, `vendor` (may be null), `kind`, `width` and `height` (copied from the iframe's attributes when present). It carries the class `cookieconsent-optout-<category>` so Cookiebot hides it once that category is accepted. The default message is translatable in the `cookiebot-embeds` category and links to `javascript:Cookiebot.renew()`. |
 | BR-18 | The default placeholder has no inline `style` attribute (strict CSP sites) and no dependency on the site's CSS framework; it uses `cbe-placeholder` classes that a site may style. |
 | BR-19 | **Vue mode** (`mode` = `vue`): instead of Cookiebot's attributes, gated elements get the plugin's own (`data-cbe-consent`, `data-cbe-src`, with `type="text/plain"` on scripts) so Cookiebot does not activate them before Vue has rebuilt the page. The plugin registers its activator script in the page head. The activator releases elements whose category is consented once both (a) the site has called `window.CookiebotEmbeds.ready()` and (b) Cookiebot has reported consent, and again on every later Cookiebot consent event; it shows and hides placeholders itself. Released scripts are replaced by live copies with all attributes and inline body kept. Confirmed by spike 0.1: for a returning visitor Cookiebot releases scripts as soon as it loads, which can be before Vue mounts, and Vue's rebuild then removes the listeners the script attached. An element Vue creates again later (for example under a `v-if`) comes back gated and is released on the next `ready()` call or consent event, not at once. |
@@ -254,7 +254,7 @@ Vue instance's `mounted()` hook. Idempotent.
 
 | Surface | New or reuse | Notes |
 |---|---|---|
-| Report utility | New, Craft's native utility layout and admin table | Columns: site, host, provider, category, action, kind, example page (link), hits, last seen. Filter by site. Each unknown row shows the config line to allow or classify it. Clear button. Empty state per section 3. |
+| Report utility | New, Craft's native utility layout and admin table | Columns: site, host, provider, category, action, kind, example page (link), hours seen, last seen. Filter by site. Each unknown row shows the config line to allow or classify it. Clear button. Empty state per section 3. |
 | Placeholder | New, plugin template | Message plus "change cookie settings" link; sized from the iframe's width and height attributes via data attributes only |
 
 **Design source.** None: the report reuses Craft's own CP components; the placeholder is unstyled by

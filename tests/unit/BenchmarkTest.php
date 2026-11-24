@@ -75,8 +75,10 @@ final class BenchmarkTest extends TestCase
         $this->assertSame(16, substr_count($output, 'type="text/plain"'));
         $this->assertSame(4 + 1, substr_count($output, 'data-cookieblock-src='));
         $this->assertSame(20 + 5, substr_count($output, 'data-cookieconsent="'));
-        // One placeholder per gated iframe and per gated body widget; none in the head (BR-16).
-        $this->assertSame(4 + 12, substr_count($output, 'data-cbe-placeholder='));
+        // One placeholder per gated iframe; none in the head, and none for the 12 body widgets,
+        // whose providers (YouTube, Google Maps, the unknown CDN) each have a gated iframe with a
+        // placeholder already (BR-16).
+        $this->assertSame(4, substr_count($output, 'data-cbe-placeholder='));
     }
 
     /**

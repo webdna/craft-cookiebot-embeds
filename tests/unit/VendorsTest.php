@@ -132,6 +132,9 @@ final class VendorsTest extends TestCase
             'Stripe is necessary' => ['js.stripe.com/v3/', 'Stripe', 'necessary'],
             'Hotjar is statistics' => ['static.hotjar.com/c/hotjar-0000000.js', 'Hotjar', 'statistics'],
             'Intercom is preferences' => ['widget.intercom.io/widget/example0', 'Intercom', 'preferences'],
+            'Lucky Orange is statistics' => ['tools.luckyorange.com/core/lo.js', 'Lucky Orange', 'statistics'],
+            'ZoomInfo script host' => ['js.zi-scripts.com/zi-tag.js', 'ZoomInfo', 'marketing'],
+            'FlippingBook embed' => ['online.flippingbook.com/EmbedScriptUrl.aspx', 'FlippingBook', 'marketing'],
             'unlisted host' => ['widgets.example.org/loader.js', null, null],
         ];
     }
@@ -189,6 +192,8 @@ final class VendorsTest extends TestCase
             'Pinterest load' => ['Pinterest Tag', "pintrk('load', '0000000000000', {em: ''}); pintrk('page');"],
             'Microsoft UET' => ['Microsoft UET', '(function(w,d,t,r,u){var f;f=function(){var o={ti:"000000"};o.q=w[u],w[u]=new UET(o),w[u].push("pageLoad")}})(window,document,"script",s,"uetq");'],
             'HubSpot queue' => ['HubSpot', "var _hsq = window._hsq = window._hsq || []; _hsq.push(['setPath', '/']);"],
+            // The URL and the global's name are decoded at run time, so only the loader's shape is left.
+            'ZoomInfo loader' => ['ZoomInfo', "window[(function(_a,_b){var _c='';for(var _i=0;_i<_a.length;_i++){_c+=String.fromCharCode(_a[_i].charCodeAt()-_b)}return _c})(atob('ZXhhbXBsZQ=='), 3)] = '00000000000000000000'; var zi = document.createElement('script'); (zi.type = 'text/javascript'), (zi.async = true), (zi.src = (function(_d){return _d})(atob('ZXhhbXBsZQ=='))), document.body.appendChild(zi);"],
             'Snap Pixel' => ['Snap Pixel', "snaptr('init', '00000000-0000-0000-0000-000000000000', {});"],
             'X/Twitter pixel' => ['X/Twitter pixel', "twq('config','abcde');"],
             'Intercom settings' => ['Intercom', 'window.intercomSettings = { app_id: "example0" };'],
