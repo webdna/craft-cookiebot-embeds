@@ -298,7 +298,7 @@ final class Rewriter
         } else {
             $edits[] = [$tag['nameEnd'], $tag['nameEnd'], ' type="text/plain"'];
         }
-        $edits[] = [$tag['lastAttributeEnd'], $tag['lastAttributeEnd'], self::consentAttributes($found->category)];
+        $edits[] = [$tag['lastAttributeEnd'], $tag['lastAttributeEnd'], $this->consentAttributes($found->category)];
         $rewritten = self::apply(substr($html, 0, $tag['end']), $edits, from: $tag['start']);
 
         // BR-16: a widget in the body gets its placeholder just before it.
@@ -318,7 +318,7 @@ final class Rewriter
         $src = trim($attributes['src'] ?? '');
 
         if (Classifier::isAlreadyMarked('iframe', $attributes)) {
-            $url = $src !== '' ? $src : trim($attributes['data-cookieblock-src'] ?? '');
+            $url = $src !== '' ? $src : trim($attributes['data-cookieblock-src'] ?? $attributes['data-cbe-src'] ?? '');
             $this->see($this->classifier->classify($url), RewriteResult::ACTION_ALREADY, RewriteResult::KIND_IFRAME, always: true);
             return [];
         }
@@ -336,14 +336,15 @@ final class Rewriter
         $this->see($found, RewriteResult::ACTION_GATED, RewriteResult::KIND_IFRAME);
 
         // BR-15: every `src` renamed (a browser would fall back to a second one), consent
-        // attributes appended, nothing else moved.
+        // attributes appended, nothing else moved. BR-19: in Vue mode, to the plugin's own name.
         $edits = [];
+        $srcName = $this->isVue() ? 'data-cbe-src' : 'data-cookieblock-src';
         foreach ($tag['attributes'] as $attribute) {
             if ($attribute['name'] === 'src') {
-                $edits[] = [$attribute['nameStart'], $attribute['nameEnd'], 'data-cookieblock-src'];
+                $edits[] = [$attribute['nameStart'], $attribute['nameEnd'], $srcName];
             }
         }
-        $edits[] = [$tag['lastAttributeEnd'], $tag['lastAttributeEnd'], self::consentAttributes($found->category)];
+        $edits[] = [$tag['lastAttributeEnd'], $tag['lastAttributeEnd'], $this->consentAttributes($found->category)];
         $result = [[$tag['start'], $tag['end'], self::apply(substr($html, 0, $tag['end']), $edits, from: $tag['start'])]];
 
         if ($after !== null) {
@@ -440,10 +441,20 @@ final class Rewriter
         return $this->placeholder === null ? '' : ($this->placeholder)($found->category, $found->vendor, $kind, $width, $height);
     }
 
-    private static function consentAttributes(string $category): string
+    /**
+     * The consent attribute, then the section 7 test hook (plugin-gated, not hand-gated). BR-19:
+     * in Vue mode the plugin's own name, so Cookiebot never releases the element before Vue has
+     * rebuilt the page; the activator releases it instead.
+     */
+    private function consentAttributes(string $category): string
     {
-        // The second is the section 7 test hook: plugin-gated, not hand-gated.
-        return sprintf(' data-cookieconsent="%1$s" data-cbe-gated="%1$s"', $category);
+        $name = $this->isVue() ? 'data-cbe-consent' : 'data-cookieconsent';
+        return sprintf(' %2$s="%1$s" data-cbe-gated="%1$s"', $category, $name);
+    }
+
+    private function isVue(): bool
+    {
+        return $this->config->mode === 'vue';
     }
 
     /**

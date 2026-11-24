@@ -153,7 +153,8 @@ final class VendorsTest extends TestCase
         self::assertSame('Google Tag Manager', $vendors->infra('WWW.GOOGLETAGMANAGER.COM/gtm.js')['vendor'] ?? null);
         self::assertNull($vendors->infra('www.googletagmanager.com/gtag/js'));
         self::assertNull($vendors->infra('www.youtube.com/embed/abc123'));
-        self::assertSame(['Cookiebot', 'CookieDeclaration'], Vendors::INFRA_IDS);
+        // Plus the plugin's own Vue mode activator, which must never gate itself (BR-19).
+        self::assertSame(['Cookiebot', 'CookieDeclaration', 'cookiebot-embeds-activator'], Vendors::INFRA_IDS);
     }
 
     public function testFirstMatchTakesTheFirstEntryInOrder(): void

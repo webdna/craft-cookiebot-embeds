@@ -33,8 +33,13 @@ final class Vendors
         ['match' => 'googletagmanager.com/ns.html', 'vendor' => 'Google Tag Manager', 'category' => 'infra'],
     ];
 
-    /** Element ids that mark Cookiebot's own scripts whatever their URL (BR-9). */
-    public const INFRA_IDS = ['Cookiebot', 'CookieDeclaration'];
+    /**
+     * Element ids that mark Cookiebot's own scripts whatever their URL (BR-9), and the plugin's own
+     * Vue mode activator (BR-19), whose URL is Craft's resource URL: a CDN, or whatever host the
+     * request came in on, either of which can classify as unknown. Gating it would stop Vue mode
+     * ever releasing anything.
+     */
+    public const INFRA_IDS = ['Cookiebot', 'CookieDeclaration', 'cookiebot-embeds-activator'];
 
     private const SOURCE = 'vendors.json';
 

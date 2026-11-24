@@ -184,6 +184,8 @@ final class ClassifierTest extends TestCase
     {
         self::assertTrue(Classifier::isInfraById(['id' => 'Cookiebot', 'src' => 'https://evil.net/uc.js']));
         self::assertTrue(Classifier::isInfraById(['id' => 'CookieDeclaration']));
+        // The Vue mode activator, served from a CDN or an unlisted request host (BR-19).
+        self::assertTrue(Classifier::isInfraById(['id' => 'cookiebot-embeds-activator', 'src' => 'https://cdn.example.net/cpresources/abc/activator.js']));
         self::assertFalse(Classifier::isInfraById(['id' => 'cookiebot']));
         self::assertFalse(Classifier::isInfraById(['id' => null]));
         self::assertFalse(Classifier::isInfraById([]));

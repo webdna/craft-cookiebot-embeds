@@ -63,7 +63,8 @@ final class Classifier
      */
     public static function isAlreadyMarked(string $tag, array $attributes): bool
     {
-        if (array_key_exists('data-cookieconsent', $attributes)) {
+        // The plugin's own Vue-mode attribute counts too (BR-19), so a page is never gated twice.
+        if (array_key_exists('data-cookieconsent', $attributes) || array_key_exists('data-cbe-consent', $attributes)) {
             return true;
         }
         return strtolower($tag) === 'script'

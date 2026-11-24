@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vue mode</title>
+<script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="00000000-0000-0000-0000-000000000000" type="text/javascript"></script>
+<script src="https://cdn.example.net/cpresources/abc123/activator.js?v=1" id="cookiebot-embeds-activator"></script>
+<script type="text/plain" async src="https://www.googletagmanager.com/gtag/js?id=G-EXAMPLE00" data-cbe-consent="statistics" data-cbe-gated="statistics"></script>
+</head>
+<body>
+<div id="app">
+  <h1>{{ title }}</h1>
+  <button @click="count++" :class="{ active: count > 0 }">Clicked {{ count }} times</button>
+  <iframe width="560" height="315" data-cbe-src="https://www.youtube.com/embed/abcdefghijk" title="Video" allowfullscreen data-cbe-consent="marketing" data-cbe-gated="marketing"></iframe><div data-cbe-placeholder class="cookieconsent-optout-marketing">YouTube|iframe|560x315</div>
+  <div data-cbe-placeholder class="cookieconsent-optout-marketing">unknown|script|-x-</div><script type="text/plain" src="https://cdn.example.net/widget.js" data-widget-id="123" data-cbe-consent="marketing" data-cbe-gated="marketing"></script>
+  <div data-cbe-placeholder class="cookieconsent-optout-statistics">Example loader|inline|-x-</div><script type="text/plain" data-cbe-consent="statistics" data-cbe-gated="statistics">exampleLoader('example-id');</script>
+  <iframe src="https://player.vimeo.com/video/1" data-cbe-consent="marketing"></iframe>
+  <iframe data-cookieblock-src="https://player.vimeo.com/video/2" data-cookieconsent="marketing"></iframe>
+  <script src="/js/first-party.js"></script>
+</div>
+<script src="https://www.example.com/js/app.js"></script>
+</body>
+</html>

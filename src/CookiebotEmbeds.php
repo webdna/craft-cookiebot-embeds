@@ -32,6 +32,7 @@ use webdna\cookiebotembeds\services\Report;
 use webdna\cookiebotembeds\services\Rewriter;
 use webdna\cookiebotembeds\services\Vendors;
 use webdna\cookiebotembeds\utilities\Report as ReportUtility;
+use webdna\cookiebotembeds\web\assets\activator\ActivatorAsset;
 use yii\base\Event;
 
 /**
@@ -110,6 +111,49 @@ class CookiebotEmbeds extends Plugin
         Event::on(View::class, View::EVENT_AFTER_RENDER_PAGE_TEMPLATE, function(TemplateEvent $event): void {
             $event->output = $this->filterPage($event);
         });
+
+        // BR-19: the activator must be in the head, which is already written by the time the
+        // page is filtered, so it is registered before the page renders.
+        Event::on(View::class, View::EVENT_BEFORE_RENDER_PAGE_TEMPLATE, function(TemplateEvent $event): void {
+            $this->registerActivator($event);
+        });
+    }
+
+    /**
+     * The request, when this page template is a site page (BR-1); otherwise null.
+     */
+    private function sitePageRequest(TemplateEvent $event): ?WebRequest
+    {
+        $request = Craft::$app->getRequest();
+        if (!$request instanceof WebRequest || !PageFilter::isSitePage(
+            false,
+            $request->getIsCpRequest(),
+            $request->getIsActionRequest(),
+            $request->getIsPreview(),
+            $event->templateMode,
+        )) {
+            return null;
+        }
+        return $request;
+    }
+
+    /**
+     * BR-19: in Vue mode, the activator in the head of every site page. Never throws (B3); a page
+     * without a head simply has nowhere to put it (TN-17).
+     */
+    private function registerActivator(TemplateEvent $event): void
+    {
+        try {
+            if ($this->sitePageRequest($event) === null) {
+                return;
+            }
+            $config = $this->getSiteConfig(Craft::$app->getSites()->getCurrentSite());
+            if ($config->enabled && $config->mode === 'vue') {
+                Craft::$app->getView()->registerAssetBundle(ActivatorAsset::class);
+            }
+        } catch (Throwable $e) {
+            $this->logError('The Vue mode activator could not be registered: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -121,14 +165,8 @@ class CookiebotEmbeds extends Plugin
     {
         $output = $event->output;
         try {
-            $request = Craft::$app->getRequest();
-            if (!$request instanceof WebRequest || !PageFilter::isSitePage(
-                false,
-                $request->getIsCpRequest(),
-                $request->getIsActionRequest(),
-                $request->getIsPreview(),
-                $event->templateMode,
-            )) {
+            $request = $this->sitePageRequest($event);
+            if ($request === null) {
                 return $output;
             }
 

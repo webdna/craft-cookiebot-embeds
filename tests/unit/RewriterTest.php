@@ -22,9 +22,10 @@ final class RewriterTest extends TestCase
 {
     private const FIXTURES = __DIR__ . '/../fixtures';
 
-    private static function rewriter(bool $placeholders = true): Rewriter
+    private static function rewriter(bool $placeholders = true, string $mode = 'standard'): Rewriter
     {
         $config = (new Config())->resolve([
+            'mode' => $mode,
             'allow' => ['widgets.example.org'],
             'fingerprints' => [
                 ['pattern' => 'exampleLoader\(', 'vendor' => 'Example loader', 'category' => 'statistics'],
@@ -56,8 +57,14 @@ final class RewriterTest extends TestCase
     public static function fixtures(): array
     {
         $names = ['iframes', 'scripts-external', 'scripts-inline', 'fingerprint', 'already-marked', 'infra',
-            'non-js-types', 'alpine-attributes', 'malformed', 'widget-body', 'benchmark', ];
+            'non-js-types', 'alpine-attributes', 'malformed', 'widget-body', 'benchmark', 'vue-mode', ];
         return array_combine($names, array_map(fn(string $name): array => [$name], $names));
+    }
+
+    /** A fixture named `vue-...` is rewritten in Vue mode (BR-19). */
+    private static function modeFor(string $name): string
+    {
+        return str_starts_with($name, 'vue-') ? 'vue' : 'standard';
     }
 
     #[DataProvider('fixtures')]
@@ -65,7 +72,7 @@ final class RewriterTest extends TestCase
     {
         $input = (string)file_get_contents(self::FIXTURES . "/$name.html");
         $expectedFile = self::FIXTURES . "/$name.expected.html";
-        $output = self::rewriter()->rewrite($input)->html;
+        $output = self::rewriter(mode: self::modeFor($name))->rewrite($input)->html;
 
         if (getenv('CBE_UPDATE_FIXTURES') === '1') {
             file_put_contents($expectedFile, $output);
@@ -80,9 +87,10 @@ final class RewriterTest extends TestCase
     #[DataProvider('fixtures')]
     public function testRewritingIsIdempotent(string $name): void
     {
-        $once = self::rewriter()->rewrite((string)file_get_contents(self::FIXTURES . "/$name.html"))->html;
+        $rewriter = self::rewriter(mode: self::modeFor($name));
+        $once = $rewriter->rewrite((string)file_get_contents(self::FIXTURES . "/$name.html"))->html;
 
-        self::assertSame($once, self::rewriter()->rewrite($once)->html);
+        self::assertSame($once, $rewriter->rewrite($once)->html);
     }
 
     /**
@@ -92,13 +100,13 @@ final class RewriterTest extends TestCase
     public function testOnlyRewrittenTagsChange(string $name): void
     {
         $input = (string)file_get_contents(self::FIXTURES . "/$name.html");
-        $output = self::rewriter(placeholders: false)->rewrite($input)->html;
+        $output = self::rewriter(placeholders: false, mode: self::modeFor($name))->rewrite($input)->html;
 
         // Undo, on both sides, the only three things the rewriter may do to a tag: append the
         // consent attributes, rename `src`, and add or replace `type` (compared without types).
         $normalise = function(string $html): string {
-            $html = (string)preg_replace('~ data-cookieconsent="\w+" data-cbe-gated="\w+"~', '', $html);
-            $html = (string)preg_replace('~(?<=\s)(?:data-cookieblock-)?src(?=\s*=)~i', 'src', $html);
+            $html = (string)preg_replace('~ data-(?:cookieconsent|cbe-consent)="\w+" data-cbe-gated="\w+"~', '', $html);
+            $html = (string)preg_replace('~(?<=\s)(?:data-cookieblock-|data-cbe-)?src(?=\s*=)~i', 'src', $html);
             return (string)preg_replace('~\s(?:type|TYPE)=("[^"]*"|\'[^\']*\'|[^\s>]+)~', '', $html);
         };
         self::assertSame($normalise($input), $normalise($output));

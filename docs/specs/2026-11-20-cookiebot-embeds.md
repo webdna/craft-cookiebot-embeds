@@ -750,6 +750,29 @@ it is ticked.
 - [ ] **5.1 Vue mode** - `src/web/assets/activator/activator.js`, asset bundle, rewriter mode switch,
       `vue-mode` fixture
       Rules: BR-19 (or BR-20) - Verify: TS-6, TN-16
+      *Built 2026-11-24, not ticked: TS-6 steps 2 to 5 on staging site B, with the real banner and
+      `uc.js`, are still owed (spike notes). In `mode` = `vue` the rewriter writes `data-cbe-consent`
+      and, on iframes, `data-cbe-src` in place of Cookiebot's attributes (`data-cbe-gated` and the
+      placeholder are unchanged); `data-cbe-consent` also counts as already marked (BR-8), so a page
+      is never gated twice. `ActivatorAsset` publishes only `activator.js` and is registered in the
+      head on `EVENT_BEFORE_RENDER_PAGE_TEMPLATE`, because the head is already written when the page
+      is filtered; it uses the same site-page guard, only when enabled and in Vue mode, as an
+      external file so a strict CSP needs no `unsafe-inline`. Decisions: the activator's id
+      `cookiebot-embeds-activator` joins `Vendors::INFRA_IDS` (BR-9 by id), because its URL is
+      Craft's resource URL, which a CDN or an unlisted request host makes unknown; the smoke site
+      gated it before this. A released script is a live copy inserted just after the original, which
+      stays in place, inert and unmarked: Vue 2 keeps a reference to the original node and inserts
+      siblings relative to it. Releasing waits for `ready()` and Cookiebot's report (`hasResponse`,
+      or `CookiebotOnConsentReady`, `CookiebotOnAccept`, `CookiebotOnDecline`); after `ready()`,
+      waiting embeds are hidden and placeholders shown even before Cookiebot reports, since an
+      unanswered banner consents to nothing. Show and hide use `element.style`, which a CSP allows.
+      Placeholders keep `cookieconsent-optout-<category>`, so Cookiebot hides them too. Checked: the
+      `vue-mode` fixture (TS-6 step 1); a headless Chrome page with Vue 2.7, the real
+      `activator.js` and a stub of `uc.js`'s release pass, in four cases: consent after mount,
+      returning visitor (Cookiebot's own pass released nothing; the widget's listener survived three
+      re-renders), `ready()` never called (nothing released, TN-16) and decline; and the local
+      Craft 5 site (activator in the head and not gated, served file identical, absent in standard
+      mode, when disabled and on a page with no head).*
 - [ ] **5.2 Banner option and settings link** - head insertion in the hook, Twig extension
       `src/twig/Extension.php`
       Rules: BR-21, BR-22 - Verify: TS-10
