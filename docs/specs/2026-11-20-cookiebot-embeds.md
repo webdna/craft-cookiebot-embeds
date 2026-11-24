@@ -796,6 +796,16 @@ it is ticked.
 - [ ] **6.1 Staging verification and docs** - README sections (install, config, Vue mode, allow
       list, report, not affiliated, not a compliance guarantee), `CHANGELOG.md` 1.0.0
       Rules: BR-31 - Verify: TS-1 to TS-10 manual steps, B4
+      *Docs done 2026-11-24, not ticked: the staging half needs sites A, B and C. The README now
+      covers install, what is changed and left, every config key, allow list, provider overrides,
+      placeholder and translations, Vue mode with the `ready()` call, the banner option and settings
+      link (with the warning not to combine it with Tag Manager's Cookiebot), the report, logs, and
+      keeps both BR-31 disclaimers word for word, so CI's grep still passes. `CHANGELOG.md` holds the
+      whole release under `## 1.0.0 - Unreleased`; the date goes in when Sam tags. Owed on staging,
+      in private windows with the network panel (B5 manual table): TS-1 to TS-3, TS-5, TS-7, TS-8
+      and TS-9 step 2 on site A, with Live Preview and the section 7 regression checks; TS-6 steps
+      2 to 5 on site B (then tick 5.1); TS-10 steps 4 and 5 on site C (Appendix A #3). Appendix A #1
+      (the handle on the Plugin Store) is still open and blocks release.*
 
 ---
 
