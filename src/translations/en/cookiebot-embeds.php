@@ -8,6 +8,9 @@ return [
     'This content is blocked until you accept {category} cookies.' => 'This content is blocked until you accept {category} cookies.',
     'Change cookie settings' => 'Change cookie settings',
 
+    // cookiebotSettingsLink()'s default text (BR-22).
+    'Cookie settings' => 'Cookie settings',
+
     // Category names, as the placeholder message uses them.
     'preferences' => 'preferences',
     'statistics' => 'statistics',

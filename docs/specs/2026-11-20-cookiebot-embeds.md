@@ -773,9 +773,26 @@ it is ticked.
       re-renders), `ready()` never called (nothing released, TN-16) and decline; and the local
       Craft 5 site (activator in the head and not gated, served file identical, absent in standard
       mode, when disabled and on a page with no head).*
-- [ ] **5.2 Banner option and settings link** - head insertion in the hook, Twig extension
+- [x] **5.2 Banner option and settings link** - head insertion in the hook, Twig extension
       `src/twig/Extension.php`
       Rules: BR-21, BR-22 - Verify: TS-10
+      *Done 2026-11-24. `services\Banner::insert()` is a pure string edit: the snippet goes straight
+      after the first `<head ...>` tag, and only when that tag comes before any `<body>`, so a
+      fragment, `<header>` or a `<head` that is only text is skipped silently (TN-17). It runs in the
+      hook after the rewrite and in its own try, so the rewriter never sees it and a failure costs
+      only the banner; it is behind `enabled` (BR-2), and the hook's fast exit now lets a page with
+      nothing to gate through when the option is on. Any `<script>` loading a `consent.cookiebot.*`
+      `uc.js`, in head or body, counts as already there, which also stops a second copy when a
+      filtered page is filtered again. The missing-`cbid` warning goes through the hourly log. The
+      inserted script keeps `id="Cookiebot"`, so it is infra by id (BR-9). No SRI on it: Cookiebot
+      updates `uc.js` in place. `cookiebotSettingsLink()` escapes its text, renders attributes with
+      Craft's Html helper (class lists, data maps) and always keeps the renew `href`; the extension
+      is registered for console requests too, so a queued email template using it still compiles.
+      Checked: `BannerTest` (TS-10 steps 1 to 3, TN-17) and `ExtensionTest` through a real Twig
+      environment; the local Craft 5 site (uc.js first in head and not gated, on a page with nothing
+      to gate too, not added beside an existing uc.js, nor to a fragment or JSON, EU domain, nothing
+      when disabled or off, one warning for three pages without `cbid`, both links rendered). TS-10
+      steps 4 and 5 on site C (Appendix A #3) are owed in 6.1.*
 - [ ] **6.1 Staging verification and docs** - README sections (install, config, Vue mode, allow
       list, report, not affiliated, not a compliance guarantee), `CHANGELOG.md` 1.0.0
       Rules: BR-31 - Verify: TS-1 to TS-10 manual steps, B4

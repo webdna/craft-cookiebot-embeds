@@ -49,7 +49,8 @@ return [
     // 'placeholderTemplate' => '_partials/cookie-placeholder',
 
     // For sites that do not load Cookiebot through Google Tag Manager: insert the banner script
-    // at the top of every page's <head>. Needs cbid.
+    // at the top of every page's <head>, unless the page already loads uc.js. Needs cbid.
+    // Put {{ cookiebotSettingsLink() }} in the footer so visitors can reopen the banner.
     // 'injectCookiebot' => false,
     // 'cbid' => App::env('COOKIEBOT_CBID'),
     // 'cookiebotDomain' => 'consent.cookiebot.com', // or 'consent.cookiebot.eu'

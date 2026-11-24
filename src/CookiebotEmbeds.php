@@ -20,9 +20,11 @@ use craft\web\View;
 use DateTimeImmutable;
 use Psr\Log\LogLevel;
 use Throwable;
+use webdna\cookiebotembeds\models\RewriteResult;
 use webdna\cookiebotembeds\models\Settings;
 use webdna\cookiebotembeds\models\SiteConfig;
 use webdna\cookiebotembeds\records\Sighting;
+use webdna\cookiebotembeds\services\Banner;
 use webdna\cookiebotembeds\services\Classifier;
 use webdna\cookiebotembeds\services\Config;
 use webdna\cookiebotembeds\services\Log;
@@ -31,6 +33,7 @@ use webdna\cookiebotembeds\services\Placeholder;
 use webdna\cookiebotembeds\services\Report;
 use webdna\cookiebotembeds\services\Rewriter;
 use webdna\cookiebotembeds\services\Vendors;
+use webdna\cookiebotembeds\twig\Extension;
 use webdna\cookiebotembeds\utilities\Report as ReportUtility;
 use webdna\cookiebotembeds\web\assets\activator\ActivatorAsset;
 use yii\base\Event;
@@ -101,6 +104,14 @@ class CookiebotEmbeds extends Plugin
             $event->types[] = ReportUtility::class;
         });
 
+        // BR-22: registered for console requests too, so a template rendered by a queue job (an
+        // email, say) that uses the function still compiles.
+        try {
+            Craft::$app->getView()->registerTwigExtension(new Extension());
+        } catch (Throwable $e) {
+            $this->logError('The Twig extension could not be registered: ' . $e->getMessage());
+        }
+
         // BR-1: console requests render no pages for visitors.
         if (Craft::$app->getRequest()->getIsConsoleRequest()) {
             return;
@@ -170,11 +181,11 @@ class CookiebotEmbeds extends Plugin
                 return $output;
             }
 
-            // The cheap checks first, so a disabled site or a page with nothing to gate costs no
-            // provider list, no services and no template lookup.
+            // The cheap checks first, so a disabled site or a page with nothing to gate (and no
+            // banner to add) costs no provider list, no services and no template lookup.
             $site = Craft::$app->getSites()->getCurrentSite();
             $config = $this->getSiteConfig($site);
-            if (!$config->enabled || !Rewriter::mightRewrite($output)) {
+            if (!$config->enabled || (!$config->injectCookiebot && !Rewriter::mightRewrite($output))) {
                 return $output;
             }
 
@@ -195,10 +206,30 @@ class CookiebotEmbeds extends Plugin
             $this->logError('The page was served unchanged: ' . $e->getMessage());
             return $output;
         }
-        if ($result === null) {
-            return $output;
-        }
 
+        $html = $result === null ? $output : $this->afterRewrite($result, $config, $site, $request);
+
+        // BR-21: after the rewrite, so the rewriter never sees the plugin's own script. A failure
+        // costs only the banner.
+        try {
+            $html = Banner::insert(
+                $html,
+                $config,
+                function(string $message) use ($site): void {
+                    $this->getLog()->once(Log::WARNING, "Site `$site->handle`: $message");
+                },
+            ) ?? $html;
+        } catch (Throwable $e) {
+            $this->logError('The Cookiebot banner could not be added: ' . $e->getMessage());
+        }
+        return $html;
+    }
+
+    /**
+     * Logging and recording for a rewritten page (BR-23, BR-24, BR-29); the rewritten HTML.
+     */
+    private function afterRewrite(RewriteResult $result, SiteConfig $config, Site $site, WebRequest $request): string
+    {
         // A logging failure must not cost the page its rewrite.
         try {
             $this->getLog()->unknownHosts($result, $site->handle);
