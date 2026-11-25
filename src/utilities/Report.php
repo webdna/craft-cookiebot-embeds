@@ -10,7 +10,6 @@ use DateTime;
 use DateTimeZone;
 use webdna\cookiebotembeds\models\RewriteResult;
 use webdna\cookiebotembeds\records\Sighting;
-use webdna\cookiebotembeds\services\Log;
 
 /**
  * The report (AC-7, BR-25): which providers the plugin has seen on each site and what it did with
@@ -80,7 +79,7 @@ class Report extends Utility
         foreach ($rows as $row) {
             $siteId = (int) $row['siteId'];
             $baseUrl = $siteUrls[$siteId] ?? null;
-            $unknown = Log::isUnknown($row);
+            $unknown = self::isUnknown($row);
 
             $presented[] = [
                 'site' => $siteNames[$siteId] ?? (string) $siteId,
@@ -99,6 +98,18 @@ class Report extends Utility
             ];
         }
         return $presented;
+    }
+
+    /**
+     * Whether a row is of a host listed nowhere (BR-6 step 6): it has a host but no vendor and was
+     * not allowed. First-party URLs are never recorded; Cookiebot, Tag Manager, listed providers and
+     * fingerprint-only trackers carry a vendor; `allow` and filesystem hosts are `allowed`.
+     *
+     * @param array{host: string, vendor: string|null, action: string} $row
+     */
+    public static function isUnknown(array $row): bool
+    {
+        return $row['host'] !== '' && $row['vendor'] === null && $row['action'] !== RewriteResult::ACTION_ALLOWED;
     }
 
     /**

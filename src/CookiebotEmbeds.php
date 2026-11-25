@@ -83,12 +83,11 @@ class CookiebotEmbeds extends Plugin
     {
         parent::init();
 
-        // BR-29: the plugin's own log file, at info, so unknown hosts are recorded even where
-        // Craft's default target only keeps warnings (production).
+        // BR-29: the plugin's own log file, so its warnings and errors are in one place.
         Craft::getLogger()->dispatcher->targets[self::LOG_CATEGORY] = new MonologTarget([
             'name' => self::LOG_CATEGORY,
             'categories' => [self::LOG_CATEGORY],
-            'level' => LogLevel::INFO,
+            'level' => LogLevel::WARNING,
             'logContext' => false,
             'allowLineBreaks' => false,
         ]);
@@ -226,17 +225,10 @@ class CookiebotEmbeds extends Plugin
     }
 
     /**
-     * Logging and recording for a rewritten page (BR-23, BR-24, BR-29); the rewritten HTML.
+     * Recording for a rewritten page (BR-23, BR-24); the rewritten HTML.
      */
     private function afterRewrite(RewriteResult $result, SiteConfig $config, Site $site, WebRequest $request): string
     {
-        // A logging failure must not cost the page its rewrite.
-        try {
-            $this->getLog()->unknownHosts($result, $site->handle);
-        } catch (Throwable $e) {
-            $this->logError('Unknown hosts could not be logged: ' . $e->getMessage());
-        }
-
         // BR-23, BR-24: recording never costs the page its rewrite either. The path is the only
         // part of the request read, and only for the report's example page.
         if ($config->report) {
@@ -325,11 +317,11 @@ class CookiebotEmbeds extends Plugin
         return $this->log ??= new Log(
             claim: fn(string $key, int $ttl): bool => Craft::$app->getCache()->add(self::LOG_CATEGORY . ':log:' . md5($key), 1, $ttl),
             write: function(string $level, string $message): void {
-                match ($level) {
-                    Log::ERROR => Craft::error($message, self::LOG_CATEGORY),
-                    Log::WARNING => Craft::warning($message, self::LOG_CATEGORY),
-                    default => Craft::info($message, self::LOG_CATEGORY),
-                };
+                if ($level === Log::ERROR) {
+                    Craft::error($message, self::LOG_CATEGORY);
+                } else {
+                    Craft::warning($message, self::LOG_CATEGORY);
+                }
             },
         );
     }

@@ -217,7 +217,7 @@ garbage collection. The report's clear button deletes all rows. Uninstall drops 
 | BR-26 | Rows not seen for 30 days are deleted during Craft garbage collection. |
 | BR-27 | Configuration is read only from `config/cookiebot-embeds.php` (with `App::env()` values where the user writes them); there is no CP settings page. Invalid values (unknown category, unknown mode, non-array lists) are logged once and replaced by the default for that key; loading the config never throws. |
 | BR-28 | The shipped provider list is `src/data/vendors.json`: an ordered array of `{match, vendor, category}` plus a `fingerprints` array of `{pattern, vendor, category}`. Categories are `necessary`, `preferences`, `statistics`, `marketing` or `infra`. It is the single source of truth shared with the cookiebot-check skill; the skill's copy is synced from it, not the other way round. |
-| BR-29 | Each unknown host is logged at `info` level in the `cookiebot-embeds` log category at most once per hour per site. Nothing is ever sent anywhere: the plugin makes no outbound requests and sends no email or notification. |
+| BR-29 | Unknown hosts are surfaced by the report (BR-25), not the log (the info-level unknown-host log was dropped on 2026-11-24: the report shows the same hosts with the config line to add). The plugin logs only its own warnings and errors, in the `cookiebot-embeds` category and its own log file, each distinct line at most once per hour. Nothing is ever sent anywhere: the plugin makes no outbound requests and sends no email or notification. |
 | BR-30 | The repo contains no client names, client domains, or real Cookiebot, Tag Manager, analytics or CRM IDs, in code, tests, fixtures or docs. Fixtures use `example.com`, `example.org` and made-up IDs. Enforced in CI (profile V5). |
 | BR-31 | The README states that the plugin is not affiliated with or endorsed by Cookiebot or Usercentrics, and that it reduces but does not guarantee compliance: it only sees what the server renders. |
 
@@ -416,7 +416,7 @@ report's labels and its empty state, all translatable. No client copy is owed.
 | TN-9 | A subdomain of the site's own host, and a host that merely contains the site's domain as a substring (`example.com.evil.net`) | First is first-party; second is unknown and gated (BR-6) |
 | TN-10 | Invalid config: unknown category, unknown mode, a non-compiling fingerprint, a string where an array is expected | Logged once, default used, page still served (BR-14, BR-27) |
 | TN-11 | Report table missing or database unavailable | Page served rewritten; error logged (BR-24) |
-| TN-12 | The same unknown host 500 times on one page | One sighting row, one log line per hour (BR-23, BR-29) |
+| TN-12 | The same unknown host 500 times on one page | One sighting row, written at most once per hour (BR-23) |
 | TN-13 | `vendors.json` missing or unreadable | Logged; every third party treated as unknown (fail closed), infra rule BR-9 still applies because it is coded, not listed |
 | TN-14 | Live Preview request | Rewritten like a site page (BR-1) |
 | TN-15 | Utility or clear action requested by a logged-in user without utility access, and clear without CSRF | 403 / 400 (BR-25) |

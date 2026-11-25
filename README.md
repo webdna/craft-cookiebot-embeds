@@ -202,8 +202,9 @@ recording.
 
 ## Logs
 
-The plugin writes to `storage/logs/cookiebot-embeds-<date>.log`: each unknown host at `info`, at
-most once an hour per site, and any config warning or internal error once an hour. A failure inside
+The plugin writes its config warnings and internal errors to
+`storage/logs/cookiebot-embeds-<date>.log`, each at most once an hour. Unknown hosts are in the
+[report](#report), not the log. A failure inside
 the plugin is logged and the page is served unchanged; the plugin never takes a page down. It
 makes no outbound requests and sends nothing anywhere.
 

@@ -16,4 +16,4 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Banner option (`injectCookiebot`, `cbid`, `cookiebotDomain`) that adds Cookiebot's `uc.js` to the top of every page's head, for sites that do not load Cookiebot through Google Tag Manager.
 - The `cookiebotSettingsLink()` Twig function, a link that reopens the Cookiebot banner.
 - The Cookiebot Embeds report under Utilities: every third party seen, with category, action, example page and last seen, the config line for unknown hosts, and a clear button. Rows are throttled to one write per hour each and pruned after 30 days by garbage collection.
-- The plugin's own log file, `storage/logs/cookiebot-embeds-<date>.log`, with each unknown host once an hour per site. Any failure inside the plugin is logged and the page is served unchanged.
+- The plugin's own log file, `storage/logs/cookiebot-embeds-<date>.log`, for its config warnings and errors, each once an hour. Any failure inside the plugin is logged and the page is served unchanged.
