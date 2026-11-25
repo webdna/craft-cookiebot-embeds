@@ -130,9 +130,43 @@ final class RewriterTest extends TestCase
                 ['static.hotjar.com', 'already', 'script'],
                 ['cdn.example-unlisted.org', 'already', 'script'],
                 ['www.youtube.com', 'already', 'iframe'],
-                ['', 'already', 'inline'],
+                // Known only by its fingerprint, so recorded under its vendor's stand-in host.
+                ['fingerprint:meta pixel', 'already', 'inline'],
             ],
             array_map(fn(array $s): array => [$s['host'], $s['action'], $s['kind']], $result->sightings),
+        );
+    }
+
+    /**
+     * The site's own tags are never recorded, even when a developer has marked them up.
+     */
+    public function testMarkedUpFirstPartyTagsAreNotRecorded(): void
+    {
+        $html = '<script src="/js/app.js" data-cookieconsent="ignore"></script>'
+            . '<script src="https://www.example.com/a.js" type="text/plain" data-cookieconsent="statistics"></script>'
+            . '<iframe src="/embed/form" data-cookieconsent="ignore"></iframe>'
+            . '<script data-cookieconsent="ignore">window.siteSettings = {};</script>';
+
+        self::assertSame([], self::rewriter()->rewrite($html)->sightings);
+    }
+
+    /**
+     * Two trackers known only by their fingerprints stay two sightings, each under a stand-in host
+     * made from its vendor, so the report's unique key keeps them apart.
+     */
+    public function testFingerprintOnlyTrackersAreSeparateSightings(): void
+    {
+        $html = "<script>exampleLoader('a');</script>"
+            . "<script>fbq('init', '000000000000000');</script>";
+
+        $sightings = self::rewriter()->rewrite($html)->sightings;
+
+        self::assertSame(
+            [
+                ['fingerprint:example loader', 'Example loader', 'gated', 'inline'],
+                ['fingerprint:meta pixel', 'Meta Pixel', 'gated', 'inline'],
+            ],
+            array_map(fn(array $s): array => [$s['host'], $s['vendor'], $s['action'], $s['kind']], $sightings),
         );
     }
 

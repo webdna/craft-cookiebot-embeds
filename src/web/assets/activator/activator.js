@@ -64,7 +64,6 @@
         }
         script.text = original.text;
         original.removeAttribute('data-cbe-consent');
-        original.setAttribute('data-cbe-released', '');
         original.parentNode.insertBefore(script, original.nextSibling);
     }
 
@@ -72,7 +71,6 @@
         var src = el.getAttribute('data-cbe-src');
         el.removeAttribute('data-cbe-consent');
         el.removeAttribute('data-cbe-src');
-        el.setAttribute('data-cbe-released', '');
         if (src !== null) {
             el.setAttribute('src', src);
         }

@@ -303,7 +303,7 @@ final class Rewriter
         // BR-8: already marked up; recorded, never touched.
         if (Classifier::isAlreadyMarked('script', $attributes)) {
             $found = $src === null ? $this->inlineDecision($body, record: false) : $this->classifier->classify($src);
-            $this->see($found, RewriteResult::ACTION_ALREADY, $kind, always: true);
+            $this->see($found, RewriteResult::ACTION_ALREADY, $kind);
             return null;
         }
 
@@ -371,7 +371,7 @@ final class Rewriter
 
         if (Classifier::isAlreadyMarked('iframe', $attributes)) {
             $url = $src !== '' ? $src : trim($attributes['data-cookieblock-src'] ?? $attributes['data-cbe-src'] ?? '');
-            $this->see($this->classifier->classify($url), RewriteResult::ACTION_ALREADY, RewriteResult::KIND_IFRAME, always: true);
+            $this->see($this->classifier->classify($url), RewriteResult::ACTION_ALREADY, RewriteResult::KIND_IFRAME);
             return [];
         }
 
@@ -467,21 +467,25 @@ final class Rewriter
 
     /**
      * Records a sighting once per host, action and kind. With no action, it is `allowed` for the
-     * site's allow list and filesystems and `left` for other ungated third parties; first-party
-     * URLs are not recorded unless `$always`.
+     * site's allow list and filesystems and `left` for other ungated third parties. The site's own
+     * URLs are never recorded, even when marked up: the report is about third parties.
      */
-    private function see(?Classification $found, ?string $action, string $kind, bool $always = false): void
+    private function see(?Classification $found, ?string $action, string $kind): void
     {
-        $found ??= new Classification('', null, 'necessary', Classification::SOURCE_FIRST_PARTY);
-        if ($found->source === Classification::SOURCE_FIRST_PARTY && !$always) {
+        if ($found === null || $found->source === Classification::SOURCE_FIRST_PARTY) {
             return;
         }
         $action ??= in_array($found->source, [Classification::SOURCE_ALLOW, Classification::SOURCE_FILESYSTEM], true)
             ? RewriteResult::ACTION_ALLOWED
             : RewriteResult::ACTION_LEFT;
 
-        $this->sightings["$found->host|$action|$kind"] ??= [
-            'host' => $found->host,
+        // A tracker known only by its fingerprint has no host; its vendor keeps its row its own.
+        $host = $found->host === '' && $found->vendor !== null && $found->vendor !== ''
+            ? RewriteResult::FINGERPRINT_HOST . strtolower($found->vendor)
+            : $found->host;
+
+        $this->sightings["$host|$action|$kind"] ??= [
+            'host' => $host,
             'vendor' => $found->vendor,
             'category' => $found->category,
             'action' => $action,

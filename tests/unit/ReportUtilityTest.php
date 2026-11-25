@@ -45,6 +45,19 @@ final class ReportUtilityTest extends TestCase
     }
 
     /**
+     * A fingerprint-only tracker's stand-in host is a key, not something to show: the row reads as
+     * an inline script with its provider, and is not unknown.
+     */
+    public function testAFingerprintRowShowsNoHost(): void
+    {
+        [$row] = Report::present([self::row('fingerprint:meta pixel', 'Meta Pixel', 'gated', 'inline')], [1 => 'Main'], [1 => null]);
+
+        $this->assertSame('', $row['host']);
+        $this->assertSame('Meta Pixel', $row['vendor']);
+        $this->assertFalse($row['unknown']);
+    }
+
+    /**
      * An unknown host shows the lines that allow it or name it (section 6, Screens).
      */
     public function testAnUnknownHostShowsItsConfigLines(): void

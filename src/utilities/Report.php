@@ -8,6 +8,7 @@ use craft\db\Query;
 use craft\models\Site;
 use DateTime;
 use DateTimeZone;
+use webdna\cookiebotembeds\models\RewriteResult;
 use webdna\cookiebotembeds\records\Sighting;
 use webdna\cookiebotembeds\services\Log;
 
@@ -83,7 +84,8 @@ class Report extends Utility
 
             $presented[] = [
                 'site' => $siteNames[$siteId] ?? (string) $siteId,
-                'host' => $row['host'],
+                // A fingerprint-only tracker's stand-in host is a key, not a host: shown as an inline script.
+                'host' => str_starts_with($row['host'], RewriteResult::FINGERPRINT_HOST) ? '' : $row['host'],
                 'vendor' => $row['vendor'],
                 'category' => $row['category'],
                 'action' => $row['action'],

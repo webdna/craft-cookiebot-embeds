@@ -18,7 +18,7 @@
     {% endif %}
 
     {% if rows %}
-        <form method="post" action="" data-cbe-report-clear>
+        <form method="post" action="">
             {{ actionInput('cookiebot-embeds/report/clear') }}
             {{ csrfInput() }}
             <button type="submit" class="btn submit">{{ 'Clear report'|t('cookiebot-embeds') }}</button>
@@ -27,12 +27,12 @@
 </div>
 
 {% if not rows %}
-    <p class="zilch" data-cbe-report-empty>
+    <p class="zilch">
         {{ "No third-party embeds seen yet. Browse the site's pages and they will appear here."|t('cookiebot-embeds') }}
     </p>
 {% else %}
     <div class="tableview tablepane">
-        <table class="data fullwidth" data-cbe-report>
+        <table class="data fullwidth">
             <thead>
                 <tr>
                     {% if multiSite %}<th scope="col">{{ 'Site'|t('cookiebot-embeds') }}</th>{% endif %}
@@ -47,7 +47,7 @@
             </thead>
             <tbody>
                 {% for row in rows %}
-                    <tr data-cbe-row="{{ row.action }} {{ row.kind }} {{ row.host }}">
+                    <tr>
                         {% if multiSite %}<td>{{ row.site }}</td>{% endif %}
                         <td>
                             <span class="code">{{ row.host ?: '(inline script)'|t('cookiebot-embeds') }}</span>

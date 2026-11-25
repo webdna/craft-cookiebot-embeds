@@ -18,10 +18,17 @@ final class RewriteResult
     public const KIND_IFRAME = 'iframe';
 
     /**
+     * The stand-in host of an inline script recognised only by a fingerprint, followed by its
+     * lower-cased vendor, so two such trackers on a page stay two rows under the report's key.
+     */
+    public const FINGERPRINT_HOST = 'fingerprint:';
+
+    /**
      * @param string $html The page; identical to the input when nothing was gated
      * @param list<array{host: string, vendor: string|null, category: string, action: string, kind: string}> $sightings
-     *        One per host, action and kind (the report's unique key, less the site); `host` is empty
-     *        for an inline script recognised only by a fingerprint
+     *        One per host, action and kind (the report's unique key, less the site); `host` is
+     *        {@see self::FINGERPRINT_HOST} plus the vendor for an inline script recognised only by
+     *        a fingerprint
      */
     public function __construct(
         public readonly string $html,
