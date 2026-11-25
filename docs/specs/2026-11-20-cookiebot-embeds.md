@@ -813,9 +813,9 @@ it is ticked.
 
 | # | Question | Owner | State |
 |---|---|---|---|
-| 1 | Is the handle `cookiebot-embeds` unused on the Plugin Store? Craft's update check matches by handle even for plugins not listed there | Developer | **Open - blocking release** |
+| 1 | Is the handle `cookiebot-embeds` unused on the Plugin Store? Craft's update check matches by handle even for plugins not listed there | Developer | Resolved 2026-11-25: the Plugin Store API has no plugin with this handle (it answers as for a made-up one), and Packagist has no clash. Unlisted plugins cannot be checked |
 | 2 | Vue mode's final design (BR-19 vs BR-20) and module-script handling (BR-13) | Developer, via task 0.1 | Resolved 2026-11-22: BR-19 stands, BR-20 superseded, BR-13 kept (section 8, spike notes) |
-| 3 | Staging site C with no Cookiebot in Tag Manager, and a test Cookiebot domain group ID for it | Sam | **Open - blocking release** (TS-10 manual steps) |
+| 3 | Staging site C with no Cookiebot in Tag Manager, and a test Cookiebot domain group ID for it | Sam | Open: 1.0.0 was tagged on 2026-11-25 without it (Sam's call); TS-10 steps 4 and 5 still owed |
 
 **Assumptions**
 

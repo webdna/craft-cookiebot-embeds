@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.0.0 - Unreleased
+## 1.0.0 - 2026-11-25
 ### Added
 - Initial release.
 - Every site page with an HTML response, Live Preview included, is checked as it is rendered: third-party iframes, external scripts and inline scripts that load a third party are rewritten into Cookiebot's manual markup, so they wait for the visitor's consent to their category. Only the matched tags change; the page is never re-serialised, so HTML5 and Alpine attributes survive. Output depends only on the page and the config, never on the visitor, so static caching stays correct.
