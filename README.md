@@ -127,6 +127,51 @@ settings" link. It has no inline styles and no framework classes, so style `.cbe
 `.cbe-placeholder__message` and `.cbe-placeholder__link` in the site. Cookiebot hides it once the
 category is accepted, through its `cookieconsent-optout-<category>` class.
 
+Unstyled, the span sits inline under the blocked iframe, so a responsive video shows an empty
+16:9 box with a line of small text beneath it. A starting point:
+
+```css
+.cbe-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-sizing: border-box;
+    padding: 1.5rem;
+    background: #f3f4f6;
+    font-size: 0.875rem;
+    text-align: center;
+}
+.cbe-placeholder__link {
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+/* Cover the empty frame when the iframe sits in a ratio wrapper, as in Vimeo's paste code:
+   <div style="padding:56.25% 0 0 0;position:relative;"> */
+[style*="position:relative"] > iframe + .cbe-placeholder,
+[style*="position: relative"] > iframe + .cbe-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+```
+
+- Only a blocked iframe is directly followed by a placeholder, so `iframe + .cbe-placeholder`
+  needs no attribute check and works in Vue mode too.
+- Tailwind's aspect-ratio plugin (`.aspect-w-16`) already stretches every child, the placeholder
+  included, so that wrapper needs no extra rule.
+- With Tailwind 2 or 3, keep these rules **outside** `@layer`. The class appears only in the
+  plugin's markup, never in your templates, so the purge step drops anything inside a layer.
+  Alternatively, add `cbe-placeholder` to the safelist.
+- `display: flex` is safe. Cookiebot hides the placeholder once consent is given with its own
+  `display: none !important` rule (on a `data-cybot-cookiebot-blocked` attribute), and Vue mode's
+  activator hides it with an inline `display: none`. Both win over this rule, so do not add
+  `!important` to the placeholder's `display`.
+
 To replace it, set `placeholderTemplate` to a site template. It receives `category`, `vendor`
 (may be null), `kind` (`iframe` or `script`), and `width` and `height` (the iframe's own
 attributes, or null). Keep the `cookieconsent-optout-{{ category }}` class on its root so
