@@ -104,7 +104,7 @@ final class ReportTest extends TestCase
         $this->assertSame(0, $this->request()->record($result, 1, 'other-page'));
         // Another site has its own hour.
         $this->assertSame(1, $this->request()->record($result, 2, 'other-page'));
-        // An hour on, it is written again (the upsert adds the hit).
+        // An hour on, it is written again (the upsert refreshes last seen).
         $this->now += 1;
         $this->assertSame(1, $this->request()->record($result, 1, 'later'));
         $this->assertCount(3, $this->upserts);
@@ -112,7 +112,7 @@ final class ReportTest extends TestCase
     }
 
     /**
-     * BR-23: every outcome is recorded, not only gated ones, in one batched upsert per page.
+     * BR-23: every outcome is recorded, not only gated ones, handed to the upsert together.
      */
     public function testEveryOutcomeOnThePageGoesInOneUpsert(): void
     {
@@ -148,8 +148,7 @@ final class ReportTest extends TestCase
     }
 
     /**
-     * Two sightings that become the same row once cut to fit are one row: a batched upsert must
-     * not name a row twice.
+     * Two sightings that become the same row once cut to fit are one row, claimed and written once.
      */
     public function testSightingsThatMapToOneRowAreWrittenOnce(): void
     {
@@ -224,24 +223,5 @@ final class ReportTest extends TestCase
         $this->assertSame('2026-10-24 12:00:00', $cutoff->format('Y-m-d H:i:s'));
         $this->assertLessThan($cutoff, $now->modify('-31 days'));
         $this->assertGreaterThan($cutoff, $now->modify('-1 day'));
-    }
-
-    public function testMysqlConflictClauseUpdatesTheRow(): void
-    {
-        $this->assertSame(
-            ' ON DUPLICATE KEY UPDATE [[vendor]] = VALUES([[vendor]]), [[category]] = VALUES([[category]]), '
-            . '[[examplePath]] = VALUES([[examplePath]]), [[dateUpdated]] = VALUES([[dateUpdated]])',
-            Report::onConflictSql(true),
-        );
-    }
-
-    public function testPostgresConflictClauseNamesTheUniqueKey(): void
-    {
-        $this->assertSame(
-            ' ON CONFLICT ([[siteId]], [[host]], [[action]], [[kind]]) DO UPDATE SET [[vendor]] = EXCLUDED.[[vendor]], '
-            . '[[category]] = EXCLUDED.[[category]], [[examplePath]] = EXCLUDED.[[examplePath]], '
-            . '[[dateUpdated]] = EXCLUDED.[[dateUpdated]]',
-            Report::onConflictSql(false),
-        );
     }
 }

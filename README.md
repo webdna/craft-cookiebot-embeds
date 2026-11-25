@@ -194,7 +194,7 @@ category, what it did (gated, left, allowed, already marked up, skipped), an exa
 it was last seen. Unknown hosts come with the config line to allow or classify them. This is where
 a new provider is spotted after it appears on the site.
 
-Rows are written at most once an hour each, in one batched query, so busy uncached pages do not
+Each row is written at most once an hour, so busy uncached pages do not
 write to the database on every view. Rows not seen for 30 days are removed by Craft's garbage
 collection, and **Clear report** empties it so recording starts again at once. The utility is
 visible to admins, and to anyone given the utility's permission. Set `report` to `false` to stop

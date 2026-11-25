@@ -9,7 +9,6 @@ use craft\base\Plugin;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\TemplateEvent;
 use craft\helpers\Db;
-use craft\helpers\StringHelper;
 use craft\log\MonologTarget;
 use craft\models\Site;
 use craft\services\Gc;
@@ -271,27 +270,17 @@ class CookiebotEmbeds extends Plugin
     }
 
     /**
-     * One multi-row upsert. Yii's `upsert()` takes a single row, so this is its batch insert plus
-     * the driver's conflict clause. The SQL is set raw: the batch insert has already quoted its
-     * values inline, and `quoteSql()` over them would rewrite any `{{ }}` or `[[ ]]` in a stored path.
+     * Craft's upsert, a row at a time: a row seen again takes the latest vendor, category, example
+     * page and time, and keeps its `dateCreated` and `uid` (Craft fills and protects those). The
+     * hourly throttle keeps this to a handful of rows on the first view of each hour.
      *
      * @param non-empty-list<array{siteId: int, host: string, vendor: string|null, category: string, action: string, kind: string, examplePath: string}> $rows
      */
     private function upsertSightings(array $rows): void
     {
-        $db = Craft::$app->getDb();
-        $now = Db::prepareDateForDb(new DateTimeImmutable());
-        $columns = [...array_keys($rows[0]), 'dateCreated', 'dateUpdated', 'uid'];
-        $values = array_map(
-            fn(array $row): array => [...array_values($row), $now, $now, StringHelper::UUID()],
-            $rows,
-        );
-
-        $params = [];
-        $table = $db->getSchema()->getRawTableName(Sighting::TABLE);
-        $sql = $db->getQueryBuilder()->batchInsert($table, $columns, $values, $params)
-            . $db->quoteSql(Report::onConflictSql($db->getIsMysql()));
-        $db->createCommand()->setRawSql($sql)->bindValues($params)->execute();
+        foreach ($rows as $row) {
+            Db::upsert(Sighting::TABLE, $row);
+        }
     }
 
     /**

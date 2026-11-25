@@ -211,7 +211,7 @@ garbage collection. The report's clear button deletes all rows. Uninstall drops 
 | BR-20 | *Superseded by spike 0.1 (2026-11-22); BR-19 stands.* Cookiebot's own attributes survive Vue's rebuild for iframes but not for scripts, because Cookiebot's release timing races Vue's mount (section 8, spike notes). |
 | BR-21 | **Banner option**, a switch in the plugin config (`injectCookiebot`, default `false`, for sites that do not load Cookiebot through Tag Manager): when true and `cbid` is set, a Cookiebot `uc.js` script with `data-cbid` and no `async`, `defer` or `data-blockingmode` is inserted as the first child of `<head>`. It is not inserted when the page already contains a `consent.cookiebot` `uc.js` script. `cookiebotDomain` chooses `consent.cookiebot.com` (default) or `consent.cookiebot.eu`. With `injectCookiebot` true and no `cbid`, nothing is inserted and a warning is logged once per hour. |
 | BR-22 | The Twig function `cookiebotSettingsLink(text = null, attrs = {})` returns an `<a href="javascript:Cookiebot.renew()">` with translatable default text "Cookie settings". The plugin never inserts it into the page by itself. |
-| BR-23 | **Report**: when `report` is true (default), each rewritten page records its sightings (BR-8, BR-10 to BR-16 outcomes, plus left first-party/allowed/necessary third parties as `allowed`/`left`) in one batched upsert. A given site/host/action/kind row is written at most once per hour per PHP process cache window (throttled through Craft's cache), so busy uncached pages do not write on every request. |
+| BR-23 | **Report**: when `report` is true (default), each rewritten page records its sightings (BR-8, BR-10 to BR-16 outcomes, plus left first-party/allowed/necessary third parties as `allowed`/`left`) with Craft's upsert (one statement per row; the hourly throttle keeps that to a handful). A given site/host/action/kind row is written at most once per hour per PHP process cache window (throttled through Craft's cache), so busy uncached pages do not write on every request. |
 | BR-24 | A failure to record the report (database down, lock, missing table) is logged and swallowed; the page is still served, rewritten. |
 | BR-25 | The report is a Craft utility, visible only to users with access to that utility (admins by default). Its clear action is a POST with CSRF, same permission. |
 | BR-26 | Rows not seen for 30 days are deleted during Craft garbage collection. |
@@ -713,11 +713,9 @@ it is ticked.
       page go in its one upsert (a `hits` count was dropped on 2026-11-24: it counted hours, not views). A cache
       that throws writes nothing (logged), because without the throttle every view would write. A
       failed upsert keeps its claims, so a missing table is tried and logged once an hour. Rows
-      that become one once cut to fit are merged before the upsert (Postgres refuses a row twice in
-      one statement). Yii's `upsert()` takes one row, so the live writer is its `batchInsert()` plus
-      `Report::onConflictSql()` (`ON DUPLICATE KEY UPDATE` with `VALUES()`, which MariaDB also
-      accepts, or `ON CONFLICT ... DO UPDATE`), set with `setRawSql()` because the batch insert
-      inlines its values and `quoteSql()` would rewrite a `{{ }}` or `[[ ]]` in a stored path. The
+      that become one once cut to fit are merged before the upsert. The live writer is Craft's
+      `Db::upsert()` a row at a time (2026-11-24; it replaced a hand-built batch insert with a
+      per-database conflict clause, which the throttle made unnecessary). The
       claim keys carry a generation read from the cache (`Report::GENERATION_KEY`): a cache
       dependency cannot free them, because `add()` ignores dependencies, so 4.3's clear changes the
       generation instead. The example path is `getFullPath()`, the only part of the request the

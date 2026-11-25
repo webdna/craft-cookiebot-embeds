@@ -14,8 +14,8 @@ use webdna\cookiebotembeds\records\Sighting;
  * Records what each rewritten page did, for the report (BR-23, BR-24, BR-26).
  *
  * Each site/host/action/kind row is written at most once per hour, claimed through Craft's cache,
- * so a busy uncached page is not a database write per view; the rows a page does write go in one
- * batched upsert. A failure is reported and swallowed: the page is still served, rewritten.
+ * so a busy uncached page is not a database write per view; the rows a page does write are handed
+ * to the upsert together. A failure is reported and swallowed: the page is still served, rewritten.
  *
  * Pure: the hourly claim (Craft's cache, live), the upsert (Craft's database, live) and the error
  * reporter (the plugin's throttled log) are injected.
@@ -40,7 +40,7 @@ final class Report
      * @param Closure(string $key, int $ttl): bool $claim True when the key was free and is now taken
      *        for `$ttl` seconds (Craft's `$cache->add()`)
      * @param Closure(non-empty-list<array{siteId: int, host: string, vendor: string|null, category: string, action: string, kind: string, examplePath: string}> $rows): void $upsert
-     *        Inserts the rows, or updates the existing row under the unique key (one statement)
+     *        Inserts each row, or updates the existing row under the unique key
      * @param Closure(string $message): void $onError
      */
     public function __construct(
@@ -60,8 +60,8 @@ final class Report
             $rows = [];
             foreach ($result->sightings as $sighting) {
                 $row = Sighting::row($siteId, $sighting, $path);
-                // Cutting a value to fit its column could make two sightings one row; a batched
-                // upsert must not name the same row twice (Postgres refuses it).
+                // Cutting a value to fit its column could make two sightings one row: claim and
+                // write it once.
                 $rows[self::key($row)] ??= $row;
             }
 
@@ -111,28 +111,5 @@ final class Report
     public static function pruneBefore(DateTimeInterface $now): DateTimeImmutable
     {
         return DateTimeImmutable::createFromInterface($now)->sub(new DateInterval('P' . self::PRUNE_DAYS . 'D'));
-    }
-
-    /**
-     * The clause that turns a batch insert into an upsert on the unique key: a row seen again takes
-     * the latest vendor, category, example page and time, and one more hit. `dateCreated` and `uid`
-     * keep their first values. Table and column names are in Yii's `{{%}}` and `[[ ]]` form, for
-     * `quoteSql()`.
-     *
-     * @param bool $mysql MySQL or MariaDB; otherwise Postgres (the two databases Craft 5 supports)
-     */
-    public static function onConflictSql(bool $mysql): string
-    {
-        $updated = ['vendor', 'category', 'examplePath', 'dateUpdated'];
-
-        if ($mysql) {
-            // VALUES() rather than a row alias, which MariaDB does not support.
-            $set = array_map(fn(string $c): string => "[[$c]] = VALUES([[$c]])", $updated);
-            return ' ON DUPLICATE KEY UPDATE ' . implode(', ', $set);
-        }
-
-        $set = array_map(fn(string $c): string => "[[$c]] = EXCLUDED.[[$c]]", $updated);
-        $key = implode(', ', array_map(fn(string $c): string => "[[$c]]", Sighting::UNIQUE_KEY));
-        return " ON CONFLICT ($key) DO UPDATE SET " . implode(', ', $set);
     }
 }
