@@ -7,6 +7,3 @@
 .DS_Store
 .idea
 .vscode
-
-# Client names and domains for the BR-30 check (CI writes it from the FORBIDDEN_NAMES secret)
-/.github/forbidden-names.txt

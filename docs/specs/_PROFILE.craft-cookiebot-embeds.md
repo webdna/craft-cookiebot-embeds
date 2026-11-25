@@ -74,11 +74,12 @@ Placement rule: anything that can be a pure function of input strings lives in a
 | V2 | `composer cs` | `[OK] No errors found` |
 | V3 | `composer analyse` | `[OK] No errors` |
 | V4 | `composer test` | `OK (N tests, M assertions)`, no failures, no risky, no skipped |
-| V5 | `grep -rniE -f .github/forbidden-names.txt src tests docs` | no output (exit 1) |
+| V5 | *Removed 2026-11-25 (Sam): the client-name grep against a private list* | - |
 | V6 | `LC_ALL=C grep -rn -e $'\xe2\x80\x93' -e $'\xe2\x80\x94' src tests docs README.md CHANGELOG.md` | no output |
 
-`.github/forbidden-names.txt` is gitignored and kept locally: it lists client names and domains,
-so the check itself never publishes them.
+The plugin has no reason to name a project, so there is no client-name list to check against: the
+no-project-details rule is kept by reviewing each diff (code, docs, fixtures and the commit
+message) before committing.
 
 ## 5. Traps
 
@@ -97,7 +98,8 @@ From evidence in webdna's other plugins. Every one has bitten before.
   test (schedule-it `tests/bootstrap.php`).
 - **Owned database objects carry the plugin prefix**, so uninstall drops only what the plugin made
   (query-boost `src/indexes/Declaration.php`).
-- **A public repo is checked for client names in CI**, not by memory (auditor CI, its BR-38).
+- **A public repo never names a project.** Findings from testing on a client site are written up
+  generically (made-up hosts and IDs, no site name) before they reach a doc, fixture or commit.
 
 ## 6. Working conventions
 

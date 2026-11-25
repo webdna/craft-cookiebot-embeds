@@ -218,7 +218,7 @@ garbage collection. The report's clear button deletes all rows. Uninstall drops 
 | BR-27 | Configuration is read only from `config/cookiebot-embeds.php` (with `App::env()` values where the user writes them); there is no CP settings page. Invalid values (unknown category, unknown mode, non-array lists) are logged once and replaced by the default for that key; loading the config never throws. |
 | BR-28 | The shipped provider list is `src/data/vendors.json`: an ordered array of `{match, vendor, category}` plus a `fingerprints` array of `{pattern, vendor, category}`. Categories are `necessary`, `preferences`, `statistics`, `marketing` or `infra`. It is the single source of truth shared with the cookiebot-check skill; the skill's copy is synced from it, not the other way round. |
 | BR-29 | Unknown hosts are surfaced by the report (BR-25), not the log (the info-level unknown-host log was dropped on 2026-11-24: the report shows the same hosts with the config line to add). The plugin logs only its own warnings and errors, in the `cookiebot-embeds` category and its own log file, each distinct line at most once per hour. Nothing is ever sent anywhere: the plugin makes no outbound requests and sends no email or notification. |
-| BR-30 | The repo contains no client names, client domains, or real Cookiebot, Tag Manager, analytics or CRM IDs, in code, tests, fixtures or docs. Fixtures use `example.com`, `example.org` and made-up IDs. Enforced in CI (profile V5). |
+| BR-30 | The repo contains no client names, client domains, or real Cookiebot, Tag Manager, analytics or CRM IDs, in code, tests, fixtures or docs. Fixtures use `example.com`, `example.org` and made-up IDs. Kept by reviewing each diff before committing (the CI client-name grep was removed on 2026-11-25: the plugin has no reason to name a project). |
 | BR-31 | The README states that the plugin is not affiliated with or endorsed by Cookiebot or Usercentrics, and that it reduces but does not guarantee compliance: it only sees what the server renders. |
 
 **Non-functional**
@@ -431,7 +431,7 @@ report's labels and its empty state, all translatable. No client copy is owed.
   shape and categories (BR-28); the benchmark and fast exit (BR-5, non-functional) as a test that
   fails above the budget.
 - **Static analysis and style**: ecs and PHPStan level 6 (profile V2, V3).
-- **Repo hygiene**: client-name grep and dash check (profile V5, V6) in CI; a grep that the README
+- **Repo hygiene**: dash check (profile V6) in CI; a grep that the README
   carries both disclaimers (BR-31).
 - **Manual**: TS-1 to TS-3, TS-5 to TS-8, TS-10 steps on real browsers, because Cookiebot's banner and
   consent events only run in a browser against a registered domain.
@@ -557,7 +557,10 @@ it is ticked.
       with a notice. **Owed by Sam before the first push: add the `FORBIDDEN_NAMES` secret and the
       local `.github/forbidden-names.txt`** (B5 #5 exits 2 without it). Each hygiene step was run
       locally under `bash -e` in every branch (secret missing on push and on a fork, clean list,
-      blank lines, a hit, a removed disclaimer); the workflow itself is unproved until GitHub runs it.*
+      blank lines, a hit, a removed disclaimer); the workflow itself is unproved until GitHub runs it.
+      Update 2026-11-25: the client-name step, the `FORBIDDEN_NAMES` secret and the gitignored list
+      were removed (Sam): the plugin has no reason to name a project, so BR-30 is kept by reviewing
+      each diff. First GitHub run: `check` green on 8.2 and 8.4.*
 - [x] **2.1 Classifier** - `src/services/Classifier.php`
       Rules: BR-6, BR-7, BR-8, BR-9 - Verify: B5 #4, TN-8, TN-9
       *Done 2026-11-23, with `src/models/Classification.php` (host, vendor, category, and `source`:
@@ -907,9 +910,7 @@ composer analyse
 composer test
 # expect: OK (N tests, M assertions) with no failures, skipped or risky
 
-# 5. No client names or domains in the public repo
-grep -rniE -f .github/forbidden-names.txt src tests docs README.md CHANGELOG.md
-# expect: no output, exit status 1
+# 5. Removed 2026-11-25: the client-name grep (BR-30 is kept by reviewing each diff)
 
 # 6. No en or em dashes
 LC_ALL=C grep -rn -e $'\xe2\x80\x93' -e $'\xe2\x80\x94' src tests docs README.md CHANGELOG.md

@@ -41,30 +41,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # BR-30, profile V5. The list names clients, so it lives in the FORBIDDEN_NAMES secret
-      # (one pattern per line), never in this public repo. Only file names are printed on a hit,
-      # never the matching line, so a failure cannot publish a name in the log. Pull requests from
-      # forks get no secrets and skip with a notice; anything else without the secret fails.
-      - name: No client names or domains
-        env:
-          FORBIDDEN_NAMES: ${{ secrets.FORBIDDEN_NAMES }}
-          FROM_FORK: ${{ github.event.pull_request.head.repo.fork || false }}
-        run: |
-          if [ -z "$FORBIDDEN_NAMES" ]; then
-            if [ "$FROM_FORK" = "true" ]; then
-              echo "::notice::FORBIDDEN_NAMES is not available to fork pull requests; the client-name check is skipped."
-              exit 0
-            fi
-            echo "::error::The FORBIDDEN_NAMES repository secret is not set."
-            exit 1
-          fi
-          # A blank line would match every line, so blank lines are dropped.
-          printf '%s\n' "$FORBIDDEN_NAMES" | grep -v '^[[:space:]]*$' > .github/forbidden-names.txt
-          if grep -rliE -f .github/forbidden-names.txt src tests docs README.md CHANGELOG.md; then
-            echo "::error::The files above contain a client name or domain (BR-30)."
-            exit 1
-          fi
-
       # Profile V6.
       - name: No en or em dashes
         run: |
