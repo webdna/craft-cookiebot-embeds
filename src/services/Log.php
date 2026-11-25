@@ -12,6 +12,8 @@ use webdna\cookiebotembeds\models\RewriteResult;
  *
  * Pure: the hourly claim (Craft's cache, live) and the writer (Craft's logger, live) are injected.
  * Nothing is ever sent anywhere; the plugin only writes its own log.
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 final class Log
 {

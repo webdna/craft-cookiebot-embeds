@@ -17,6 +17,8 @@ use JsonException;
  * substring of the URL's `host + path`). Fingerprints are regular expressions written without
  * delimiters and matched case-sensitively against inline script bodies (BR-14). The cookiebot-check
  * skill's copy is synced from this file, never the other way round.
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 final class Vendors
 {

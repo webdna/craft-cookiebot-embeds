@@ -9,6 +9,8 @@ use webdna\cookiebotembeds\models\SiteConfig;
  * BR-21, the banner option: Cookiebot's `uc.js` as the first child of `<head>`, for sites that do
  * not load Cookiebot through Tag Manager. A pure string edit on the page, like the rewriter: the
  * page is never parsed (BR-4), and nothing about the visitor is read (BR-3).
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 final class Banner
 {

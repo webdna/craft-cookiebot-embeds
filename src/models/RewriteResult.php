@@ -4,6 +4,8 @@ namespace webdna\cookiebotembeds\models;
 
 /**
  * A rewritten page and what the rewriter saw on it, for the report (BR-23).
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 final class RewriteResult
 {

@@ -19,6 +19,8 @@ use Twig\TwigFilter;
  *
  * Rendering never throws: a site template that fails is logged and the default is used, and if
  * the default fails too, no placeholder is inserted (the embed stays gated).
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 final class Placeholder
 {

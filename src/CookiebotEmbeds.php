@@ -253,7 +253,7 @@ class CookiebotEmbeds extends Plugin
      * The report recorder (BR-23, BR-24): each row claimed for an hour through Craft's cache,
      * written in one upsert, failures logged through the throttled log.
      */
-    public function getReport(): Report
+    private function getReport(): Report
     {
         return $this->report ??= new Report(
             claim: fn(string $key, int $ttl): bool => Craft::$app->getCache()->add(
@@ -320,7 +320,7 @@ class CookiebotEmbeds extends Plugin
      * The plugin's throttled log (BR-29): each distinct line at most once per hour, claimed
      * through Craft's cache. Writes in the `cookiebot-embeds` category.
      */
-    public function getLog(): Log
+    private function getLog(): Log
     {
         return $this->log ??= new Log(
             claim: fn(string $key, int $ttl): bool => Craft::$app->getCache()->add(self::LOG_CATEGORY . ':log:' . md5($key), 1, $ttl),
@@ -391,7 +391,7 @@ class CookiebotEmbeds extends Plugin
      * The site's resolved configuration (BR-27). Never throws: if resolution itself fails, the
      * defaults are used, which gate every unknown third party (fail closed).
      */
-    public function getSiteConfig(Site $site): SiteConfig
+    private function getSiteConfig(Site $site): SiteConfig
     {
         return $this->siteConfigs[$site->handle] ??= $this->resolveSiteConfig($site);
     }
@@ -400,7 +400,7 @@ class CookiebotEmbeds extends Plugin
      * The shipped provider list (BR-28), loaded once per request; its warnings are logged then.
      * A missing or broken file leaves the list empty, so every third party fails closed (TN-13).
      */
-    public function getVendors(): Vendors
+    private function getVendors(): Vendors
     {
         if ($this->vendors === null) {
             $this->vendors = new Vendors();
@@ -417,7 +417,7 @@ class CookiebotEmbeds extends Plugin
      * Failures are logged, never thrown. The render hook (task 3.1) passes `renderer()` to the
      * rewriter.
      */
-    public function createPlaceholder(SiteConfig $config): Placeholder
+    private function createPlaceholder(SiteConfig $config): Placeholder
     {
         return new Placeholder(
             siteTemplate: $config->placeholderTemplate,

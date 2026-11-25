@@ -11,6 +11,8 @@ use webdna\cookiebotembeds\models\SiteConfig;
  * app. It never throws. Each invalid value is replaced by its default and described in
  * `SiteConfig::$warnings` for the caller to log; an invalid entry in a list is dropped on its own,
  * so one bad provider entry does not discard the site's others.
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 final class Config
 {

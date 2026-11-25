@@ -15,6 +15,8 @@ use webdna\cookiebotembeds\models\SiteConfig;
  * filesystems' hosts; (3) the site's `allow` list; then Cookiebot and Tag Manager, which are coded
  * and come before the site's own `vendors` so no override can gate them (BR-9, B3); (4) the site's
  * `vendors`; (5) the shipped list; (6) otherwise unknown, marketing.
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 final class Classifier
 {

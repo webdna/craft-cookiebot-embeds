@@ -22,6 +22,8 @@ use webdna\cookiebotembeds\models\SiteConfig;
  *
  * @phpstan-type Attribute array{name: string, nameStart: int, nameEnd: int, start: int, end: int, value: string|null}
  * @phpstan-type Tag array{start: int, nameEnd: int, end: int, lastAttributeEnd: int, attributes: list<Attribute>}
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 final class Rewriter
 {

@@ -12,6 +12,8 @@ use webdna\cookiebotembeds\models\SiteConfig;
  * The decisions the render hook makes about a page (BR-1, BR-2, BR-5), as pure functions the unit
  * tests can reach. The plugin class reads the request and response and passes the facts in;
  * nothing here calls `Craft::$app`.
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 final class PageFilter
 {

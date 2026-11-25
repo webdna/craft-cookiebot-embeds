@@ -22,6 +22,8 @@ use webdna\cookiebotembeds\services\Config;
  * @property string $dateCreated
  * @property string $dateUpdated Last seen
  * @property string $uid
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 class Sighting extends ActiveRecord
 {

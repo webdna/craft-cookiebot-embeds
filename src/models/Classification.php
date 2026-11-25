@@ -5,6 +5,8 @@ namespace webdna\cookiebotembeds\models;
 /**
  * What the classifier decided for one URL (BR-6): its host, the provider it matched, the category
  * and which step of BR-6 decided it.
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 final class Classification
 {

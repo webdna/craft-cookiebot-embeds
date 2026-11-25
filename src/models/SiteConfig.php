@@ -6,6 +6,8 @@ namespace webdna\cookiebotembeds\models;
  * One site's configuration after normalisation (BR-27): every value has its final type, and every
  * invalid value has already been replaced by its default. The constructor defaults are the
  * plugin's defaults, and the only place they are written down.
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 final class SiteConfig
 {

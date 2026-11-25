@@ -19,6 +19,8 @@ use webdna\cookiebotembeds\records\Sighting;
  *
  * Pure: the hourly claim (Craft's cache, live), the upsert (Craft's database, live) and the error
  * reporter (the plugin's throttled log) are injected.
+ *
+ * @internal Not part of the plugin's public API; it may change in any release.
  */
 final class Report
 {
