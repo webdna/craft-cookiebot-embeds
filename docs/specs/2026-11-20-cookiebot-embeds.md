@@ -4,7 +4,7 @@ slug: cookiebot-embeds
 status: draft
 version: 0.2
 date: 2026-11-20
-author: Claude (for Sam Birch)
+author: Sam Birch
 client: webdna (internal, used across client sites)
 approver: Sam Birch
 profile: _PROFILE.craft-cookiebot-embeds.md
@@ -947,5 +947,5 @@ AC-4 is fully proved by B5 #4.
 
 | Date | Version | Change | By |
 |---|---|---|---|
-| 2026-11-20 | 0.1 | First draft from the interview | Claude for Sam Birch |
-| 2026-11-22 | 0.2 | Spike 0.1: read `uc.js` 2.146.0 and ran a local Vue 2.7 page. Cookiebot releases scripts by cloning them as `text/javascript` and can do so before Vue mounts, which kills a widget's listeners; iframes survive. BR-19 stands, BR-20 superseded, BR-13 kept with its reason, module gating in Later, Appendix A #2 resolved. Site B browser check carried by TS-6. Notes in section 8 | Claude for Sam Birch |
+| 2026-11-20 | 0.1 | First draft from the interview | Sam Birch |
+| 2026-11-22 | 0.2 | Spike 0.1: read `uc.js` 2.146.0 and ran a local Vue 2.7 page. Cookiebot releases scripts by cloning them as `text/javascript` and can do so before Vue mounts, which kills a widget's listeners; iframes survive. BR-19 stands, BR-20 superseded, BR-13 kept with its reason, module gating in Later, Appendix A #2 resolved. Site B browser check carried by TS-6. Notes in section 8 | Sam Birch |
